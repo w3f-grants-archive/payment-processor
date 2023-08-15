@@ -1,14 +1,14 @@
-import express, { query } from "express";
-import helmet from "helmet";
-import { Sequelize } from "sequelize";
-import morgan from "morgan";
 import cors from "cors";
-import { Routes } from "./interfaces";
-import { ApiOptions } from "../common/types";
-import { initResultDb } from "../common/db";
-import initIndexerDb from "@open-web3/indexer/models/index";
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import { Sequelize } from "sequelize";
+import { initDb } from "./models";
+import { Routes } from "./types";
 
+/**
+ * Represents the server
+ */
 export default class Server {
   public app: express.Application;
   public env: string;
@@ -16,8 +16,6 @@ export default class Server {
 
   protected constructor(
     private readonly db: Sequelize,
-    private readonly resultDb: Sequelize,
-    private readonly substrateApi: ApiPromise,
     routes: Routes[]
   ) {
     this.app = express();
@@ -26,7 +24,6 @@ export default class Server {
 
     this.initMiddlewares();
     this.initRoutes(routes);
-    // this.initErrorHandlers();
   }
 
   /**
@@ -35,32 +32,17 @@ export default class Server {
    * @param routes
    * @returns
    */
-  static async init(options: ApiOptions, routes: Routes[]): Promise<Server> {
+  static async init(routes: Routes[], dbUrl: string): Promise<Server> {
     console.log("Initializing API...");
 
-    const { dbUrl, dbOptions, queryDbUrl, queryDbOptions, sync, wsUrl } =
-      options;
-
-    const db = new Sequelize(dbUrl, dbOptions);
-    const queryDb = new Sequelize(queryDbUrl, queryDbOptions);
-
+    const db = new Sequelize(dbUrl);
+    
     // Authenticate DBs
-    await Promise.all([await db.authenticate(), await queryDb.authenticate()]);
+    await db.authenticate();
 
-    initIndexerDb(db);
-    initResultDb(db);
+    initDb(db);
 
-    if (sync) {
-      await Promise.all([await db.sync(), await queryDb.sync()]);
-    }
-
-    const wsProvider = new WsProvider(wsUrl);
-
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-    });
-
-    return new Server(db, queryDb, api, routes);
+    return new Server(db, routes);
   }
 
   public listen() {

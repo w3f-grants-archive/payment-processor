@@ -1,12 +1,11 @@
-import { NextFunction, Request, Response } from "express";
-
-//@ts-ignore
-export const asyncHandler = function (fn) {
-  return function (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<Response> {
-    return Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
+/**
+ * Checks if the given value is hex string.
+ * @param str
+ * @returns boolean
+ */
+export function isHex(value: string | number): boolean {
+  if (typeof value === "number") {
+    return false;
+  }
+  return /^0x[0-9a-f]*$/i.test(value);
+}
