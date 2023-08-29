@@ -1,16 +1,16 @@
-import { DataTypes, Model, Sequelize } from "sequelize";
+import { Model, Sequelize } from "sequelize";
 
 /**
- * @description Accounts model
+ * @description Account model
  */
-export class Accounts extends Model {}
+export class Account extends Model {}
 
 /**
  * Initializes the database
- * @param db 
+ * @param db
  */
 export function initDb(db: Sequelize): void {
-  Accounts.init(
+  Account.init(
     {
       index: {
         type: DataTypes.INTEGER,
