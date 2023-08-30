@@ -1,0 +1,14 @@
+
+[package]
+name = "pcidss-oracle"
+version = "0.1.0"
+authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
+edition = "2021"
+readme = "README.md"
+
+[dependencies]
+lapin = "2.3.1"
+iso8583_rs = "0.1.10"
+futures-lite = "^1.7"
+tokio = { version = "1.17.0", features = ["full"] }
+tracing = "0.1.27"
