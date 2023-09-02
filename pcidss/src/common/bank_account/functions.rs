@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::common::bank_account::model::{BankAccount, BankAccountCreate, BankAccountUpdate};
+use crate::common::bank_account::models::{BankAccount, BankAccountCreate, BankAccountUpdate};
 use crate::common::bank_account::traits::BankAccountTrait;
 use crate::common::error::DomainError;
 

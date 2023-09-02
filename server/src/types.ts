@@ -26,6 +26,10 @@ export enum MTI {
   FinancialTransactionRequest = "0200",
   // Financial Transaction Response from the server
   FinancialTransactionRequestResponse = "0210",
+  // Reversal request
+  ReversalRequest = "0400",
+  // Reversal response
+  ReversalRequestResponse = "0410",
 }
 
 // Merchant Category Codes

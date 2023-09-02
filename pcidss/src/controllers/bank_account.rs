@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::common::{
     bank_account::{
-        model::{BankAccount, BankAccountCreate, BankAccountUpdate},
+        models::{BankAccount, BankAccountCreate, BankAccountUpdate},
         traits::BankAccountTrait,
     },
     error::DomainError,
@@ -38,6 +38,22 @@ impl BankAccountTrait for PgBankAccount {
         Ok(None)
     }
 
+    async fn find_by_card_number(
+        &self,
+        card_number: &str,
+    ) -> Result<Option<BankAccount>, DomainError> {
+        let client = self.pool.get().await?;
+        let stmt = client
+            .prepare("SELECT * FROM bank_account WHERE card_number = $1")
+            .await?;
+
+        if let Some(result) = client.query_opt(&stmt, &[&card_number]).await? {
+            return Ok(Some((&result).into()));
+        }
+
+        Ok(None)
+    }
+
     async fn update(
         &self,
         id: &Uuid,
@@ -45,7 +61,7 @@ impl BankAccountTrait for PgBankAccount {
     ) -> Result<BankAccount, DomainError> {
         let client = self.pool.get().await?;
 
-        let mut bank_account = &self
+        let mut bank_account = self
             .find_by_id(id)
             .await?
             .ok_or(DomainError::NotFound("Bank account not found".to_string()))?;
@@ -53,11 +69,11 @@ impl BankAccountTrait for PgBankAccount {
         bank_account.try_update(bank_account_update).await?;
 
         let stmt = client
-            .prepare("UPDATE bank_account SET balance = $1 WHERE id = $2 RETURNING *")
+            .prepare("UPDATE bank_account SET balance = $1, nonce = $2 WHERE id = $3 RETURNING *")
             .await?;
 
         let result = client
-            .query_one(&stmt, &[&bank_account.balance, &id])
+            .query_one(&stmt, &[&bank_account.balance, &bank_account.nonce, &id])
             .await?;
 
         Ok((&result).into())
@@ -70,7 +86,7 @@ impl BankAccountTrait for PgBankAccount {
         let client = self.pool.get().await?;
         let stmt = client
             .prepare(
-                "INSERT INTO bank_account (id, card_number, card_holder_first_name, card_holder_last_name, card_expiration_date, card_cvv, balance) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+                "INSERT INTO bank_account (id, card_number, card_holder_first_name, card_holder_last_name, card_expiration_date, card_cvv, balance, nonce) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
             )
             .await?;
 
@@ -85,6 +101,7 @@ impl BankAccountTrait for PgBankAccount {
                     &bank_account_create.card_expiration_date,
                     &bank_account_create.card_cvv,
                     &0_u32, // Initial balance is 0
+                    &0_u32, // Initial nonce is 0
                 ],
             )
             .await?;
@@ -114,6 +131,7 @@ impl From<&Row> for BankAccount {
             card_expiration_date: row.get("card_expiration_date"),
             card_number: row.get("card_number"),
             balance: row.get("balance"),
+            nonce: row.get("nonce"),
         }
     }
 }

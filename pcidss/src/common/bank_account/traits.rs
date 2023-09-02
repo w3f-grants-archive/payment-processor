@@ -3,7 +3,7 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use super::model::{BankAccount, BankAccountCreate, BankAccountUpdate};
+use super::models::{BankAccount, BankAccountCreate, BankAccountUpdate};
 use crate::common::error::DomainError;
 
 /// `BankAccountTrait` is a trait for bank account operations.
@@ -13,6 +13,12 @@ use crate::common::error::DomainError;
 pub trait BankAccountTrait: Send + Sync {
     /// Find a bank account by unique identifier.
     async fn find_by_id(&self, id: &Uuid) -> Result<Option<BankAccount>, DomainError>;
+
+    /// Find a bank account by card number.
+    async fn find_by_card_number(
+        &self,
+        card_number: &str,
+    ) -> Result<Option<BankAccount>, DomainError>;
 
     /// Create a new bank account.
     async fn create(&self, bank_account: &BankAccountCreate) -> Result<BankAccount, DomainError>;

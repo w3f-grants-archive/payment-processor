@@ -116,6 +116,7 @@ export default class Server {
       43: "Dummy business name, Dummy City, 1200000", // Card Acceptor Name/Location
       49: "997", // Currency Code, Transaction, USD - 997, EUR - 978
       61: cvv,
+      126: "0".repeat(100), // dummy 50 bytes, will be replaced in the future
       127: "0".repeat(50), // dummy 50 bytes, will be replaced in the future
     };
   }

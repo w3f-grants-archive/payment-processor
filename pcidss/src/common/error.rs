@@ -1,5 +1,8 @@
 //! Error types for the domain layer
 
+use std::num::ParseIntError;
+
+use iso8583_rs::iso8583::IsoError;
 use log::error;
 use thiserror::Error;
 
@@ -50,6 +53,18 @@ impl From<validator::ValidationErrors> for DomainError {
 
 impl From<lapin::Error> for DomainError {
     fn from(value: lapin::Error) -> Self {
+        DomainError::InternalServerError(value.to_string())
+    }
+}
+
+impl From<IsoError> for DomainError {
+    fn from(value: IsoError) -> Self {
+        DomainError::ApiError(value.msg)
+    }
+}
+
+impl From<ParseIntError> for DomainError {
+    fn from(value: ParseIntError) -> Self {
         DomainError::InternalServerError(value.to_string())
     }
 }

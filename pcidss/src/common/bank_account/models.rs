@@ -3,7 +3,7 @@
 use chrono::{DateTime, Months, Utc};
 use uuid::Uuid;
 
-use crate::common::error::DomainError;
+use crate::common::{error::DomainError, types::TransactionType};
 
 /// `BankAccountCreate` is a model for creating a bank account.
 #[derive(Debug, Clone)]
@@ -42,15 +42,6 @@ impl BankAccountCreate {
             card_cvv,
         }
     }
-}
-
-/// `TransactionType` is an enum for the type of transaction.
-#[derive(Debug, Clone, PartialEq)]
-pub enum TransactionType {
-    /// Debit transaction type.
-    Debit,
-    /// Credit transaction type.
-    Credit,
 }
 
 /// `BankAccountUpdate` is a model for updating a bank account.
@@ -92,6 +83,8 @@ pub struct BankAccount {
     pub card_cvv: String,
     /// Balance of the bank account.
     pub balance: u32,
+    /// Nonce of the bank account.
+    pub nonce: u32,
 }
 
 impl BankAccount {
@@ -103,6 +96,7 @@ impl BankAccount {
         card_expiration_date: DateTime<Utc>,
         card_cvv: String,
         balance: u32,
+        nonce: u32,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -112,6 +106,7 @@ impl BankAccount {
             card_expiration_date,
             card_cvv,
             balance,
+            nonce,
         }
     }
 
@@ -129,6 +124,12 @@ impl BankAccount {
         .ok_or(DomainError::ApiError(String::from(
             "Arithmetic underflow/overflow",
         )))?;
+
+        self.nonce
+            .checked_add(1)
+            .ok_or(DomainError::ApiError(String::from(
+                "Arithmetic underflow/overflow",
+            )))?;
 
         Ok(())
     }
