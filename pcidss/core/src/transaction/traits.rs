@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use super::models::{Transaction, TransactionCreate};
-use crate::common::error::DomainError;
+use crate::error::DomainError;
 
 /// `TransactionTrait` is a trait for transaction operations.
 ///

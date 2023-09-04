@@ -1,0 +1,11 @@
+[package]
+name = "op-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = { workspace = true }
+deadpool-postgres = { workspace = true }
+tokio-postgres = { workspace = true }
+uuid = { workspace = true }
+op-core = { workspace = true }

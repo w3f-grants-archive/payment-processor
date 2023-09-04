@@ -45,18 +45,6 @@ impl From<deadpool_postgres::CreatePoolError> for DomainError {
     }
 }
 
-impl From<validator::ValidationErrors> for DomainError {
-    fn from(value: validator::ValidationErrors) -> Self {
-        DomainError::BadRequest(value.to_string())
-    }
-}
-
-impl From<lapin::Error> for DomainError {
-    fn from(value: lapin::Error) -> Self {
-        DomainError::InternalServerError(value.to_string())
-    }
-}
-
 impl From<IsoError> for DomainError {
     fn from(value: IsoError) -> Self {
         DomainError::ApiError(value.msg)

@@ -3,7 +3,7 @@ use deadpool_postgres::Pool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::common::{
+use op_core::{
     error::DomainError,
     transaction::{
         models::{Transaction, TransactionCreate},
@@ -77,18 +77,5 @@ impl TransactionTrait for PgTransaction {
             .await?;
 
         Ok((&row).into())
-    }
-}
-
-impl From<&tokio_postgres::Row> for Transaction {
-    fn from(row: &tokio_postgres::Row) -> Self {
-        Self {
-            id: row.get("id"),
-            hash: row.get("hash"),
-            from: row.get("from"),
-            to: row.get("to"),
-            amount: row.get("amount"),
-            transaction_type: row.get("transaction_type"),
-        }
     }
 }

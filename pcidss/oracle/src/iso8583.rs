@@ -6,18 +6,16 @@ use chrono::Datelike;
 use iso8583_rs::iso8583::iso_spec::{new_msg, IsoMsg, Spec};
 use tracing::debug;
 
-use super::types::*;
-use crate::common::bank_account::models::BankAccount;
-use crate::pcidss_gateway::constants::POPULATED_ISO_MSG_FIELD_NUMBERS;
-use crate::{
-    common::{
-        bank_account::{models::BankAccountUpdate, traits::BankAccountTrait},
-        error::DomainError,
-        transaction::{models::TransactionCreate, traits::TransactionTrait},
-        types::TransactionType,
-    },
-    pcidss_gateway::constants::RESPONSE_CODE_FIELD_NUMBER,
+use op_core::bank_account::models::BankAccount;
+use op_core::{
+    bank_account::{models::BankAccountUpdate, traits::BankAccountTrait},
+    error::DomainError,
+    transaction::{models::TransactionCreate, traits::TransactionTrait},
+    types::TransactionType,
 };
+
+use super::types::*;
+use crate::constants::{POPULATED_ISO_MSG_FIELD_NUMBERS, RESPONSE_CODE_FIELD_NUMBER};
 
 #[derive(Clone)]
 pub struct Iso8583MessageProcessor {
@@ -32,59 +30,64 @@ pub struct Iso8583MessageProcessor {
 impl Iso8583MessageProcessor {
     /// Process the encoded ISO-8583 message and return the response
     pub async fn process(&self, msg: &mut Vec<u8>) -> Result<(Vec<u8>, IsoMsg), DomainError> {
-        if let Ok(iso_msg) = self.spec.parse(msg) {
-            debug!("parsed incoming request - message = \"{}\" successfully. \n : parsed message: \n --- \n {} \n ----\n",
+        match self.spec.parse(msg) {
+            Ok(iso_msg) => {
+                debug!("parsed incoming request - message = \"{}\" successfully. \n : parsed message: \n --- \n {} \n ----\n",
                        iso_msg.msg.name(), iso_msg);
 
-            let req_msg_type = iso_msg.get_field_value(&"message_type".to_string())?;
+                let req_msg_type = iso_msg.get_field_value(&"message_type".to_string())?;
 
-            let res_msg_type = match req_msg_type.as_str().try_into() {
-                Ok(MTI::AuthorizationRequest) => MTI::AuthorizationResponse,
-                Ok(MTI::ReversalRequest) => MTI::FinancialResponse,
-                _ => {
-                    return Err(DomainError::ApiError(
-                        "Unsupported message type".to_string(),
-                    ))
+                let res_msg_type = match req_msg_type.as_str().try_into() {
+                    Ok(MTI::AuthorizationRequest) => MTI::AuthorizationResponse,
+                    Ok(MTI::ReversalRequest) => MTI::FinancialResponse,
+                    _ => {
+                        return Err(DomainError::ApiError(
+                            "Unsupported message type".to_string(),
+                        ))
+                    }
+                };
+
+                // Create a new response message
+                let mut res_iso_msg = new_msg(
+                    &iso_msg.spec,
+                    iso_msg.spec.get_message_from_header(res_msg_type.into())?,
+                );
+
+                // handle authorization request
+                match req_msg_type
+                    .as_str()
+                    .try_into()
+                    .expect("Validated above; qed")
+                {
+                    MTI::AuthorizationRequest => {
+                        self.handle_authorization_request(&mut res_iso_msg).await?
+                    }
+                    MTI::ReversalRequest => self.handle_reversal_request(&mut res_iso_msg).await?,
+                    _ => {
+                        return Err(DomainError::ApiError(
+                            "Unsupported message type".to_string(),
+                        ))
+                    }
+                };
+
+                // don't copy the fields that we have already set
+                res_iso_msg.echo_from(&iso_msg, &POPULATED_ISO_MSG_FIELD_NUMBERS[1..])?;
+
+                if let Ok(res_data) = res_iso_msg.assemble() {
+                    return Ok((res_data, res_iso_msg));
                 }
-            };
 
-            // Create a new response message
-            let mut res_iso_msg = new_msg(
-                &iso_msg.spec,
-                iso_msg.spec.get_message_from_header(res_msg_type.into())?,
-            );
-
-            // handle authorization request
-            match req_msg_type
-                .as_str()
-                .try_into()
-                .expect("Validated above; qed")
-            {
-                MTI::AuthorizationRequest => {
-                    self.handle_authorization_request(&mut res_iso_msg).await?
-                }
-                MTI::ReversalRequest => self.handle_reversal_request(&mut res_iso_msg).await?,
-                _ => {
-                    return Err(DomainError::ApiError(
-                        "Unsupported message type".to_string(),
-                    ))
-                }
-            };
-
-            // don't copy the fields that we have already set
-            res_iso_msg.echo_from(&iso_msg, &POPULATED_ISO_MSG_FIELD_NUMBERS[1..])?;
-
-            if let Ok(res_data) = res_iso_msg.assemble() {
-                return Ok((res_data, res_iso_msg));
+                Err(DomainError::ApiError(
+                    "Failed to assemble new ISO message".to_string(),
+                ))
             }
-
-            Err(DomainError::ApiError(
-                "Failed to assemble new ISO message".to_string(),
-            ))
-        } else {
-            return Err(DomainError::ApiError(
-                "Failed to parse ISO-8583 message".to_string(),
-            ));
+            Err(e) => {
+                debug!("Failed to parse incoming request - message = \"{}\". \n : error: \n --- \n {} \n ----\n",
+                       String::from_utf8_lossy(msg), e);
+                Err(DomainError::ApiError(
+                    "Failed to parse incoming request".to_string(),
+                ))
+            }
         }
     }
 
@@ -177,7 +180,7 @@ impl Iso8583MessageProcessor {
 
         // extract transaction hash from the ISO message
         // first 64 characters are the hash
-        let private_data = iso_msg.get_field_value(&"transaction_hash".to_string())?;
+        let private_data = iso_msg.get_field_value(&"private_data".to_string())?;
 
         let (tx_hash, _) = private_data.split_at(64);
 

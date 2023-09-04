@@ -1,10 +1,10 @@
+//! Defines the [`PgBankAccount`] type and its traits.
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use std::sync::Arc;
-use tokio_postgres::Row;
 use uuid::Uuid;
 
-use crate::common::{
+use op_core::{
     bank_account::{
         models::{BankAccount, BankAccountCreate, BankAccountUpdate},
         traits::BankAccountTrait,
@@ -116,22 +116,5 @@ impl BankAccountTrait for PgBankAccount {
             .await?;
         client.execute(&stmt, &[&id]).await?;
         Ok(())
-    }
-}
-
-/// Implement `From` trait for `BankAccount` from `Row`.
-/// Helps with parsing database results.
-impl From<&Row> for BankAccount {
-    fn from(row: &Row) -> Self {
-        Self {
-            id: row.get("id"),
-            card_holder_first_name: row.get("card_holder_first_name"),
-            card_holder_last_name: row.get("card_holder_last_name"),
-            card_cvv: row.get("card_cvv"),
-            card_expiration_date: row.get("card_expiration_date"),
-            card_number: row.get("card_number"),
-            balance: row.get("balance"),
-            nonce: row.get("nonce"),
-        }
     }
 }

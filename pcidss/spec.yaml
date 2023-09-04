@@ -1,0 +1,229 @@
+name: Main Spec
+id: 3
+header_fields:
+  - name: "hdr_msg_type"
+    id: 1
+    type: Fixed
+    len: 4
+    data_encoding: ASCII
+    children: []
+messages:
+  - name: "0100 - Authorization"
+    selector:
+      - "0100"
+      - "0110"
+    id: 1
+    fields:
+      - name: "message_type"
+        id: 1
+        type: Fixed
+        len: 4
+        data_encoding: ASCII
+
+      - name: "bitmap"
+        id: 2
+        type: Bitmapped
+        len: 0
+        data_encoding: BINARY
+        children:
+          - name: "card_number"
+            id: 3
+            type: Variable
+            len: 2
+            len_encoding: ASCII
+            data_encoding: ASCII
+            position: 2
+
+          - name: "proc_code"
+            id: 4
+            type: Fixed
+            len: 6
+            data_encoding: ASCII
+            position: 3
+
+          - name: "amount"
+            id: 8
+            type: Fixed
+            len: 12
+            data_encoding: ASCII
+            position: 4
+
+          - name: "transaction_timestamp"
+            id: 9
+            type: Fixed
+            len: 10
+            data_encoding: ASCII
+            position: 7
+
+          - name: "hhmmss"
+            id: 12
+            type: Fixed
+            len: 6
+            data_encoding: ASCII
+            position: 12
+          
+          - name: "hhmmss"
+            id: 13
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 13
+
+          - name: "card_expiration"
+            id: 16
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 14
+
+          - name: "merchant_code"
+            id: 18
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 18
+
+          - name: "response_code"
+            id: 11
+            type: Fixed
+            len: 2
+            data_encoding: ASCII
+            position: 39
+          
+          - name: "card_acceptor_name"
+            id: 43
+            type: Fixed
+            len: 40
+            data_encoding: ASCII
+            position: 43
+
+          - name: "cvv"
+            id: 61
+            type: Fixed
+            len: 3
+            data_encoding: ASCII
+            position: 61
+
+          - name: "private_data"
+            id: 22
+            type: Fixed
+            len: 100
+            data_encoding: ASCII
+            position: 127
+
+          - name: "private_data_2"
+            id: 14
+            type: Fixed
+            len: 50
+            data_encoding: ASCII
+            position: 128
+
+  - name: "0400 - Reversal"
+    selector:
+      - "0400"
+      - "0410"
+    id: 2
+    fields:
+      - name: "message_type"
+        id: 1
+        type: Fixed
+        len: 4
+        data_encoding: ASCII
+
+      - name: "bitmap"
+        id: 2
+        type: Bitmapped
+        len: 0
+        data_encoding: BINARY
+        children:
+          - name: "card_number"
+            id: 3
+            type: Variable
+            len: 2
+            len_encoding: ASCII
+            data_encoding: ASCII
+            position: 2
+
+          - name: "proc_code"
+            id: 4
+            type: Fixed
+            len: 6
+            data_encoding: ASCII
+            position: 3
+
+          - name: "amount"
+            id: 8
+            type: Fixed
+            len: 12
+            data_encoding: ASCII
+            position: 4
+
+          - name: "transaction_timestamp"
+            id: 9
+            type: Fixed
+            len: 10
+            data_encoding: ASCII
+            position: 7
+
+          - name: "hhmmss"
+            id: 12
+            type: Fixed
+            len: 6
+            data_encoding: ASCII
+            position: 12
+          
+          - name: "hhmmss"
+            id: 13
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 13
+
+          - name: "card_expiration"
+            id: 16
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 14
+
+          - name: "merchant_code"
+            id: 18
+            type: Fixed
+            len: 4
+            data_encoding: ASCII
+            position: 18
+
+          - name: "response_code"
+            id: 11
+            type: Fixed
+            len: 2
+            data_encoding: ASCII
+            position: 39
+          
+          - name: "card_acceptor_name"
+            id: 43
+            type: Fixed
+            len: 40
+            data_encoding: ASCII
+            position: 43
+
+          - name: "cvv"
+            id: 61
+            type: Fixed
+            len: 3
+            data_encoding: ASCII
+            position: 61
+
+          - name: "private_data"
+            id: 22
+            type: Fixed
+            len: 100
+            data_encoding: ASCII
+            position: 127
+
+          - name: "private_data_2"
+            id: 14
+            type: Fixed
+            len: 50
+            data_encoding: ASCII
+            position: 128

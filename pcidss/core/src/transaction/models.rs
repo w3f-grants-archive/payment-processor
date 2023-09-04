@@ -2,7 +2,7 @@
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::common::types::TransactionType;
+use crate::types::TransactionType;
 
 #[derive(Debug, Clone)]
 pub struct TransactionCreate {
@@ -61,27 +61,6 @@ pub struct Transaction {
     pub transaction_type: u32,
 }
 
-impl Transaction {
-    /// Creates a new `Transaction`.
-    pub fn new(
-        id: Uuid,
-        hash: String,
-        from: Uuid,
-        to: Option<Uuid>,
-        amount: u32,
-        transaction_type: TransactionType,
-    ) -> Self {
-        Self {
-            id,
-            hash,
-            from,
-            to,
-            amount,
-            transaction_type: transaction_type.into(),
-        }
-    }
-}
-
 impl From<&TransactionCreate> for Transaction {
     fn from(value: &TransactionCreate) -> Self {
         let mut hasher = Sha256::new();
@@ -96,6 +75,19 @@ impl From<&TransactionCreate> for Transaction {
             to: value.to,
             amount: value.amount,
             transaction_type: value.transaction_type.clone().into(),
+        }
+    }
+}
+
+impl From<&tokio_postgres::Row> for Transaction {
+    fn from(row: &tokio_postgres::Row) -> Self {
+        Self {
+            id: row.get("id"),
+            hash: row.get("hash"),
+            from: row.get("from"),
+            to: row.get("to"),
+            amount: row.get("amount"),
+            transaction_type: row.get("transaction_type"),
         }
     }
 }

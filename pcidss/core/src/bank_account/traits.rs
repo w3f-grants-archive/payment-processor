@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use super::models::{BankAccount, BankAccountCreate, BankAccountUpdate};
-use crate::common::error::DomainError;
+use crate::error::DomainError;
 
 /// `BankAccountTrait` is a trait for bank account operations.
 ///

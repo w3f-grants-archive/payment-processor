@@ -1,0 +1,63 @@
+[package]
+name = "pcidss-oracle"
+version = "0.1.0"
+authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
+edition = "2021"
+readme = "README.md"
+
+[[bin]]
+name = "pcidss-oracle"
+path = "src/main.rs"
+
+[dependencies]
+# Local dependencies
+op-api = { workspace = true }
+op-core = { workspace = true }
+
+# ISO8583
+iso8583_rs = { workspace = true }
+
+# RPC
+jsonrpsee = { workspace = true }
+jsonrpsee-types = { workspace = true }
+
+# Async dependencies
+async-trait = { workspace = true }
+futures = { workspace = true }
+futures-lite = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+async-std = { workspace = true }
+
+# Database
+deadpool-postgres = { workspace = true }
+tokio-postgres = { workspace = true }
+
+# Logging
+dotenv = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Other
+anyhow = { workspace = true }
+chrono = { workspace = true }
+lazy_static = { workspace = true }  
+thiserror = { workspace = true }
+uuid = { workspace = true }
+base16ct = { workspace = true }
+sha2 = { workspace = true }
+clap = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+tokio = { workspace = true }
+
+[profile.release]
+codegen-units = 1
+lto = true

@@ -1,10 +1,10 @@
+import { WsProvider } from "@polkadot/api";
 import cors from "cors";
 import express, { Router } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { MCC, MTI, ProcessingCode, RequestBody } from "./types";
 import { ensurePadded } from "./utils";
-
 // @ts-ignore
 import iso8583 from "iso_8583";
 
@@ -13,6 +13,7 @@ import iso8583 from "iso_8583";
  */
 export default class Server {
   public app: express.Application;
+  public oracle_rpc: WsProvider;
   public env: string;
   public port: string | number;
 
@@ -20,12 +21,17 @@ export default class Server {
     this.app = express();
     this.env = process.env.NODE_ENV || "development";
     this.port = process.env.PORT || 3000;
+    this.oracle_rpc = new WsProvider("ws://127.0.0.1:3030");
 
     this.initMiddlewares();
   }
 
   // Starts the server
   public async start() {
+    await this.oracle_rpc.connect();
+    console.log("Oracle RPC is connected?", this.oracle_rpc.isConnected);
+    console.log("Oracle RPC is connected?", await this.oracle_rpc.isReady);
+
     this.initRoutes();
 
     this.listen();
@@ -71,6 +77,27 @@ export default class Server {
     console.log("Is valid? ", isopack.validateMessage());
     console.log("Get MTI", isopack.getMti());
     console.log("Get Bmps Binary", isopack.getBmpsBinary());
+
+    function convert(str: any): any {
+      let arr = [];
+      for (let i = 0; i < str.length; i++) {
+        arr.push(parseInt(str[i]));
+      }
+      return arr;
+    }
+
+    console.log(
+      "Full message",
+      isopack.getIsoJSON(isopack.getBufferMessage(), {
+        lenEncoding: "hex",
+        bitmapEncoding: "hex",
+        secondaryBitmap: true,
+      })
+    );
+
+    await this.oracle_rpc.send("pcidss_submit_iso8583", [
+      Array.from(isopack.getBufferMessage().slice(2)),
+    ]);
   }
 
   // Forms a custom data to be passed to `ISO8583` pack

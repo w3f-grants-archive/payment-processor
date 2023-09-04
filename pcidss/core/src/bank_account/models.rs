@@ -1,9 +1,10 @@
 //! Models to represent a bank account and its operations.
 
 use chrono::{DateTime, Months, Utc};
+use tokio_postgres::Row;
 use uuid::Uuid;
 
-use crate::common::{error::DomainError, types::TransactionType};
+use crate::{error::DomainError, types::TransactionType};
 
 /// `BankAccountCreate` is a model for creating a bank account.
 #[derive(Debug, Clone)]
@@ -53,17 +54,6 @@ pub struct BankAccountUpdate {
     pub amount: u32,
     /// Type of change to the balance.
     pub transaction_type: TransactionType,
-}
-
-impl BankAccountUpdate {
-    /// Creates a new `BankAccountUpdate`.
-    pub fn new(id: Uuid, amount: u32, transaction_type: TransactionType) -> Self {
-        Self {
-            id,
-            amount,
-            transaction_type,
-        }
-    }
 }
 
 /// Extremely simplified, dummy version of a bank account model.
@@ -132,5 +122,22 @@ impl BankAccount {
             )))?;
 
         Ok(())
+    }
+}
+
+/// Implement `From` trait for `BankAccount` from `Row`.
+/// Helps with parsing database results.
+impl From<&Row> for BankAccount {
+    fn from(row: &Row) -> Self {
+        Self {
+            id: row.get("id"),
+            card_holder_first_name: row.get("card_holder_first_name"),
+            card_holder_last_name: row.get("card_holder_last_name"),
+            card_cvv: row.get("card_cvv"),
+            card_expiration_date: row.get("card_expiration_date"),
+            card_number: row.get("card_number"),
+            balance: row.get("balance"),
+            nonce: row.get("nonce"),
+        }
     }
 }
