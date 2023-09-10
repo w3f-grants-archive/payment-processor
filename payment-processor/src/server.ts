@@ -4,7 +4,7 @@ import express, { Router } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { MCC, MTI, ProcessingCode, RequestBody } from "./types";
-import { ensurePadded } from "./utils";
+import { ensurePadded, responseCodeToMessage } from "./utils";
 // @ts-ignore
 import iso8583 from "iso_8583";
 
@@ -21,7 +21,9 @@ export default class Server {
     this.app = express();
     this.env = process.env.NODE_ENV || "development";
     this.port = process.env.PORT || 3000;
-    this.oracle_rpc = new WsProvider("ws://127.0.0.1:3030");
+    this.oracle_rpc = new WsProvider(
+      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+    );
 
     this.initMiddlewares();
   }
@@ -29,9 +31,6 @@ export default class Server {
   // Starts the server
   public async start() {
     await this.oracle_rpc.connect();
-    console.log("Oracle RPC is connected?", this.oracle_rpc.isConnected);
-    console.log("Oracle RPC is connected?", await this.oracle_rpc.isReady);
-
     this.initRoutes();
 
     this.listen();
@@ -73,19 +72,6 @@ export default class Server {
 
     const isopack = new iso8583(data);
 
-    console.log("ISO8583 message", isopack.getBufferMessage());
-    console.log("Is valid? ", isopack.validateMessage());
-    console.log("Get MTI", isopack.getMti());
-    console.log("Get Bmps Binary", isopack.getBmpsBinary());
-
-    function convert(str: any): any {
-      let arr = [];
-      for (let i = 0; i < str.length; i++) {
-        arr.push(parseInt(str[i]));
-      }
-      return arr;
-    }
-
     console.log(
       "Full message",
       isopack.getIsoJSON(isopack.getBufferMessage(), {
@@ -95,9 +81,45 @@ export default class Server {
       })
     );
 
-    await this.oracle_rpc.send("pcidss_submit_iso8583", [
-      Array.from(isopack.getBufferMessage().slice(2)),
-    ]);
+    try {
+      let msgResponse = await this.oracle_rpc.send("pcidss_submit_iso8583", [
+        Array.from(isopack.getBufferMessage().slice(2)),
+      ]);
+
+      await this.processResponse(msgResponse, res);
+    } catch {
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Processes the response from the oracle
+  private async processResponse(isoMsg: any[], res: express.Response) {
+    // convert length of message to two bytes u16
+    let len = isoMsg.length;
+    let lenBytes: any[] = [];
+    lenBytes[0] = len >> 8;
+    lenBytes[1] = len & 0xff;
+
+    let isopack = new iso8583();
+    let msg: any = isopack.getIsoJSON(Buffer.from(lenBytes.concat(isoMsg)), {
+      lenEncoding: "hex",
+      bitmapEncoding: "hex",
+      secondaryBitmap: true,
+    });
+
+    console.log("Response from oracle", msg);
+
+    const responseCode = msg["39"];
+
+    let message = responseCodeToMessage(responseCode);
+
+    res.status(200).json({
+      status: responseCode === "00",
+      message,
+    });
   }
 
   // Forms a custom data to be passed to `ISO8583` pack
@@ -119,9 +141,7 @@ export default class Server {
     // Format is `MMDDhhmmss`
     const transmissionDate = `${monthDay}${timeDate}`;
 
-    const track2 = `${cardNumber}D${cardExpiration}2011758928889`;
-    console.log("Track-2 Data", track2);
-    console.log("Transmission Date", transmissionDate);
+    const track2 = `${cardNumber}D${cardExpiration}C${cvv}758928889`;
 
     return {
       0: MTI.AuthorizationRequest,
@@ -139,10 +159,9 @@ export default class Server {
       32: "423935", // Acquiring institution ID
       35: track2, // Track-2 Data
       41: "12345678", // Card Acceptor Terminal Identification
-      42: "MOTITILL_000001", // Card Acceptor Identification Code
+      42: "ABCDEFGH_000001", // Card Acceptor Identification Code
       43: "Dummy business name, Dummy City, 1200000", // Card Acceptor Name/Location
       49: "997", // Currency Code, Transaction, USD - 997, EUR - 978
-      61: cvv,
       126: "0".repeat(100), // dummy 50 bytes, will be replaced in the future
       127: "0".repeat(50), // dummy 50 bytes, will be replaced in the future
     };

@@ -1,24 +1,11 @@
-# PCIDSS Compliant Payment Gateway
+# PCIDSS Compliant Oracle Gateway
 
-It's a worker that receives a payment request and returns a payment response.
+Workspace contains three crates:
 
-If the payment is approved, it will settle the transaction in the ledger (in the future it will be also reflected on-chain, when blockchain part is implemented).
+- `pcidss-oracle` - the oracle itself
+- `op-api` - Oracle Provider API
+- `op-core` - Common primitive core types and traits used by both oracle and API
 
-## Build
+Workspace is written in a decoupled way, so that it is possible to add more services in the future.
 
-```bash
-$ make build
-```
-
-## Run
-
-```bash
-$ make run
-```
-
-## Test
-
-```bash
-
-$ make test
-```
+Please refer to crate level READMEs for more information.

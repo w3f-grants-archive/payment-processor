@@ -54,3 +54,23 @@ export enum ProcessingCode {
   // Withdrawal from any account
   Withdrawal = "010000",
 }
+
+// Hard coded response codes
+export enum ResponseCode {
+  // Approved
+  Approved = "00",
+  // Declined
+  Declined = "05",
+  // Insufficient funds
+  InsufficientFunds = "51",
+  // Expired card
+  ExpiredCard = "54",
+  // Invalid transaction
+  InvalidTransaction = "12",
+  // Invalid card
+  InvalidCard = "14",
+  // Invalid amount
+  InvalidAmount = "13",
+  // Invalid card number
+  InvalidCardNumber = "19",
+}

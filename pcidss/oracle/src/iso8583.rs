@@ -53,6 +53,9 @@ impl Iso8583MessageProcessor {
                     iso_msg.spec.get_message_from_header(res_msg_type.into())?,
                 );
 
+                // don't copy the fields that we have already set
+                res_iso_msg.echo_from(&iso_msg, &POPULATED_ISO_MSG_FIELD_NUMBERS[1..])?;
+
                 // handle authorization request
                 match req_msg_type
                     .as_str()
@@ -69,9 +72,6 @@ impl Iso8583MessageProcessor {
                         ))
                     }
                 };
-
-                // don't copy the fields that we have already set
-                res_iso_msg.echo_from(&iso_msg, &POPULATED_ISO_MSG_FIELD_NUMBERS[1..])?;
 
                 if let Ok(res_data) = res_iso_msg.assemble() {
                     return Ok((res_data, res_iso_msg));
@@ -103,8 +103,13 @@ impl Iso8583MessageProcessor {
             MTI::AuthorizationResponse.into(),
         )?;
 
+        debug!(
+            "Bmp child value: {:?} is on {}",
+            iso_msg.bmp,
+            iso_msg.bmp.is_on(2)
+        );
         // extract necessary fields from the ISO message
-        let card_number = iso_msg.get_field_value(&"card_number".to_string())?;
+        let card_number = iso_msg.bmp_child_value(4)?;
 
         if let Ok(Some(bank_account)) = self
             .bank_account_controller

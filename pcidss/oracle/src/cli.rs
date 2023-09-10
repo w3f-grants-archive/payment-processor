@@ -42,6 +42,12 @@ impl Cli {
     pub fn set_spec_file(&self) {
         std::env::set_var("SPEC_FILE", self.iso8583_spec.clone());
     }
+
+    /// Set env variables
+    pub fn set_env(&self) {
+        std::env::set_var("SPEC_FILE", self.iso8583_spec.clone());
+        std::env::set_var("RUST_LOG", "info");
+    }
 }
 
 impl Into<PostgresConfig> for Cli {
