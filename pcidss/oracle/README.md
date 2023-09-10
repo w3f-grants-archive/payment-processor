@@ -82,4 +82,10 @@ yarn run dev-server
 
 More on proposed architecture:
 
+<img width="930" alt="implementation" src="https://github.com/subclone/payment-processor/assets/88332432/0a700fe7-7deb-49bb-b651-925d78cddb5b">
+
+And more about how it works:
+
 ![Implementation plan](https://github.com/dastansam/Grants-Program/assets/88332432/8b832448-9095-4846-95ea-ccaebe5e52a5)
+
+> **_NOTE:_** Actual implementation might slightly differ from the presented solutions above.
