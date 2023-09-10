@@ -37,13 +37,8 @@ impl Cli {
         )
     }
 
-    /// Set `SPEC_FILE` env variable
-    /// TODO: this is because of the weird way of how `iso8583-rs` loads the spec file
-    pub fn set_spec_file(&self) {
-        std::env::set_var("SPEC_FILE", self.iso8583_spec.clone());
-    }
-
     /// Set env variables
+    /// TODO: this is because of the weird way of how `iso8583-rs` loads the spec file
     pub fn set_env(&self) {
         std::env::set_var("SPEC_FILE", self.iso8583_spec.clone());
         std::env::set_var("RUST_LOG", "info");

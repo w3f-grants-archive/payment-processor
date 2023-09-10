@@ -19,13 +19,13 @@ mod tests;
 #[tokio::main]
 async fn main() -> io::Result<()> {
     dotenv().ok();
+    let args = cli::Cli::parse();
+    // TODO: this is because of the weird way of how `iso8583-rs` loads the spec file
+    args.set_env();
+
     env_logger::init();
 
     log::info!("Starting PCIDSS Gateway Oracle");
-
-    let args = cli::Cli::parse();
-    // TODO: this is because of the weird way of how `iso8583-rs` loads the spec file
-    args.set_spec_file();
 
     let db_config = args.clone().into();
 

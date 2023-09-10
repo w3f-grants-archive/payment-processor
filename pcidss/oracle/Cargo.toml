@@ -1,8 +1,8 @@
 [package]
 name = "pcidss-oracle"
 version = "0.1.0"
-authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 readme = "README.md"
 
 [[bin]]

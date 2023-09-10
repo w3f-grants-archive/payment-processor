@@ -1,8 +1,4 @@
 [workspace]
-name = "iso8583-insfrastructure"
-version = "0.1.0"
-authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
-edition = "2021"
 resolver = "2"
 
 members = [
@@ -10,6 +6,10 @@ members = [
     "core",
     "oracle",
 ]
+
+[workspace.package]
+authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
+edition = "2021"
 
 [workspace.dependencies]
 
