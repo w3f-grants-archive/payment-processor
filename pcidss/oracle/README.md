@@ -1,12 +1,10 @@
 ## PCIDSS Compliant Oracle Gateway
 
-PCIDSS Compliant Oracle Gateway is an RPC service, which is used to process ISO-8583 messages from payment processors. It currently mocks a traditional bank which has issued some cards and is currently used for implementing a PoC implementation of ISO-8583 on a Substrate based blockchain.
+PCIDSS Compliant Oracle contains set of services to process ISO-8583 services, sync with Substrate chain and maintain local ledger. In a nutshell, it mocks a traditional bank which has issued some cards and is currently used for implementing a PoC implementation of ISO-8583 on a Substrate based blockchain.
 
 ### What it does?
 
-Oracle service implements an RPC API for processing incoming ISO-8583 messages. It also implements `MsgProcessor` trait from `iso_8583rs`. 
-
-In the future watcher service will be added, which will be used to subscribe to the Substrate chain for further integration of ISO-8583 standard.
+Oracle service implements an RPC API for processing incoming ISO-8583 messages via `MsgProcessor` trait of `iso_8583rs` crate. In the future watcher service will be added, which will be used to subscribe to the Substrate chain for further integration of ISO-8583 standard.
 
 ### How to run
 
@@ -80,7 +78,7 @@ yarn run dev-server
 
 ## Documentation
 
-More on proposed architecture:
+More on proposed architecture (and its comparison to traditional way of doing it):
 
 <img width="930" alt="implementation" src="https://github.com/subclone/payment-processor/assets/88332432/0a700fe7-7deb-49bb-b651-925d78cddb5b">
 
