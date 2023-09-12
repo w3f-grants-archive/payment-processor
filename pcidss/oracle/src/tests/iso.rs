@@ -10,7 +10,7 @@ use crate::{
 };
 
 const ALICE: DevAccount = DEV_ACCOUNTS[0];
-const BOB: DevAccount = DEV_ACCOUNTS[1];
+const _BOB: DevAccount = DEV_ACCOUNTS[1];
 const CHARLIE: DevAccount = DEV_ACCOUNTS[2];
 const DAVE: DevAccount = DEV_ACCOUNTS[3];
 const EVE: DevAccount = DEV_ACCOUNTS[4];

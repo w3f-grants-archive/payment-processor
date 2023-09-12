@@ -104,3 +104,54 @@ impl Into<BankAccountUpdate> for &Transaction {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    #[test]
+    fn test_conversion_from_transaction_create_to_transaction() {
+        let iso_msg_raw = vec![
+            48, 49, 49, 48, 242, 28, 64, 1, 34, 224, 128, 0, 0, 0, 0, 0, 0, 0, 0, 6, 49, 54, 52,
+            49, 54, 57, 56, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 52, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 49, 48, 48, 48, 48, 48, 48, 57, 49, 50, 50, 51, 49, 52, 49, 54, 50,
+            51, 49, 52, 49, 54, 48, 57, 49, 50, 48, 57, 50, 55, 52, 56, 49, 54, 48, 54, 49, 50, 51,
+            52, 53, 54, 50, 53, 52, 49, 54, 57, 56, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 52, 68,
+            48, 57, 50, 55, 67, 49, 50, 54, 48, 48, 49, 50, 51, 52, 53, 54, 55, 56, 65, 66, 67, 68,
+            69, 70, 71, 72, 95, 48, 48, 48, 48, 48, 49, 68, 117, 109, 109, 121, 32, 98, 117, 115,
+            105, 110, 101, 115, 115, 32, 110, 97, 109, 101, 44, 32, 68, 117, 109, 109, 121, 32, 67,
+            105, 116, 121, 44, 32, 49, 50, 48, 48, 48, 48, 48, 57, 57, 55, 57, 57, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 52, 57, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+            49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+            49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+        ];
+        let transaction_create = TransactionCreate {
+            id: Uuid::new_v4(),
+            iso_msg_raw,
+            nonce: 12345,
+            from: Uuid::new_v4(),
+            to: Some(Uuid::new_v4()),
+            amount: 1000,
+            transaction_type: TransactionType::Debit, // Assuming you have a TransactionType for this
+        };
+
+        let transaction: Transaction = (&transaction_create).into();
+
+        // Compute expected hash
+        let mut hasher = Sha256::new();
+        hasher.update(&transaction_create.iso_msg_raw);
+        hasher.update(transaction_create.nonce.to_be_bytes());
+        let expected_hash = format!("{:x}", hasher.finalize());
+
+        assert_eq!(transaction.id, transaction_create.id);
+        assert_eq!(transaction.hash, expected_hash);
+        assert_eq!(transaction.from, transaction_create.from);
+        assert_eq!(transaction.to, transaction_create.to);
+        assert_eq!(transaction.amount, transaction_create.amount);
+    }
+}

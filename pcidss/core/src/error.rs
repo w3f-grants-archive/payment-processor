@@ -6,7 +6,7 @@ use iso8583_rs::iso8583::IsoError;
 use log::error;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum DomainError {
     #[error("{}", _0)]
     NotFound(String),

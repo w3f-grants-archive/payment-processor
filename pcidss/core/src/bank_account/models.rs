@@ -145,3 +145,115 @@ impl From<&Row> for BankAccount {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    #[tokio::test]
+    async fn test_successful_debit() {
+        let mut bank_account = BankAccount::new(
+            "1234123412341234".to_string(),
+            "Alice".to_string(),
+            "Smith".to_string(),
+            Utc::now(),
+            "123".to_string(),
+            1000,
+            0,
+        );
+
+        let update = BankAccountUpdate {
+            id: Uuid::new_v4(),
+            transaction_type: TransactionType::Debit,
+            amount: 500,
+        };
+
+        bank_account
+            .try_update(&update)
+            .await
+            .expect("Debit failed");
+        assert_eq!(bank_account.balance, 1500);
+        assert_eq!(bank_account.nonce, 1);
+    }
+
+    #[tokio::test]
+    async fn test_successful_credit() {
+        let mut bank_account = BankAccount::new(
+            "1234123412341234".to_string(),
+            "Alice".to_string(),
+            "Smith".to_string(),
+            Utc::now(),
+            "123".to_string(),
+            1000,
+            0,
+        );
+
+        let update = BankAccountUpdate {
+            id: Uuid::new_v4(),
+            transaction_type: TransactionType::Credit,
+            amount: 500,
+        };
+
+        bank_account
+            .try_update(&update)
+            .await
+            .expect("Credit failed");
+        assert_eq!(bank_account.balance, 500);
+        assert_eq!(bank_account.nonce, 1);
+    }
+
+    #[tokio::test]
+    async fn test_arithmetic_overflow_balance() {
+        let mut bank_account = BankAccount::new(
+            "1234123412341234".to_string(),
+            "Alice".to_string(),
+            "Smith".to_string(),
+            Utc::now(),
+            "123".to_string(),
+            1000,
+            0,
+        );
+
+        let update = BankAccountUpdate {
+            id: Uuid::new_v4(),
+            transaction_type: TransactionType::Credit,
+            amount: 2000, // More than the available balance
+        };
+
+        match bank_account.try_update(&update).await {
+            Ok(_) => panic!("Expected an error due to arithmetic overflow"),
+            Err(e) => assert_eq!(
+                e,
+                DomainError::ApiError(String::from("Arithmetic underflow/overflow"))
+            ),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_arithmetic_overflow_nonce() {
+        let mut bank_account = BankAccount::new(
+            "1234123412341234".to_string(),
+            "Alice".to_string(),
+            "Smith".to_string(),
+            Utc::now(),
+            "123".to_string(),
+            1000,
+            u32::MAX,
+        );
+
+        let update = BankAccountUpdate {
+            id: Uuid::new_v4(),
+            transaction_type: TransactionType::Debit,
+            amount: 500,
+        };
+
+        match bank_account.try_update(&update).await {
+            Ok(_) => panic!("Expected an error due to arithmetic overflow"),
+            Err(e) => assert_eq!(
+                e,
+                DomainError::ApiError(String::from("Arithmetic underflow/overflow"))
+            ),
+        }
+    }
+}

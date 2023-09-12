@@ -95,10 +95,7 @@ impl Iso8583MessageProcessor {
     /// Handle authorization request
     ///
     /// Extracts necessary fields from the ISO message and performs authorization.
-    pub async fn handle_authorization_request(
-        &self,
-        iso_msg: &mut IsoMsg,
-    ) -> Result<(), DomainError> {
+    async fn handle_authorization_request(&self, iso_msg: &mut IsoMsg) -> Result<(), DomainError> {
         iso_msg.set(
             &"message_type".to_string(),
             MTI::AuthorizationResponse.into(),
@@ -192,7 +189,7 @@ impl Iso8583MessageProcessor {
     /// Handle reversal request
     ///
     /// Extracts necessary fields from the ISO message and performs reversal.
-    pub async fn handle_reversal_request(&self, iso_msg: &mut IsoMsg) -> Result<(), DomainError> {
+    async fn handle_reversal_request(&self, iso_msg: &mut IsoMsg) -> Result<(), DomainError> {
         iso_msg.set(&"message_type".to_string(), MTI::ReversalResponse.into())?;
 
         // extract transaction hash from the ISO message
