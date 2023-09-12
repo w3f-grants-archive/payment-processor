@@ -21,6 +21,8 @@ pub struct BankAccountCreate {
     pub card_expiration_date: DateTime<Utc>,
     /// Card CVV.
     pub card_cvv: String,
+    /// Balance of the bank account, can be set in test mode.
+    pub balance: u32,
 }
 
 impl BankAccountCreate {
@@ -41,6 +43,7 @@ impl BankAccountCreate {
                 .expect("valid date"),
             card_holder_last_name,
             card_cvv,
+            balance: 0,
         }
     }
 }
@@ -115,7 +118,8 @@ impl BankAccount {
             "Arithmetic underflow/overflow",
         )))?;
 
-        self.nonce
+        self.nonce = self
+            .nonce
             .checked_add(1)
             .ok_or(DomainError::ApiError(String::from(
                 "Arithmetic underflow/overflow",
@@ -136,8 +140,8 @@ impl From<&Row> for BankAccount {
             card_cvv: row.get("card_cvv"),
             card_expiration_date: row.get("card_expiration_date"),
             card_number: row.get("card_number"),
-            balance: row.get("balance"),
-            nonce: row.get("nonce"),
+            balance: row.get::<&str, i32>("balance") as u32,
+            nonce: row.get::<&str, i32>("nonce") as u32,
         }
     }
 }

@@ -13,6 +13,12 @@ pub trait TransactionTrait: Send + Sync {
     /// Find a transaction by unique identifier.
     async fn find_by_id(&self, id: &Uuid) -> Result<Option<Transaction>, DomainError>;
 
+    /// Find by beneficiary.
+    async fn find_by_beneficiary(
+        &self,
+        beneficiary: &Uuid,
+    ) -> Result<Vec<Transaction>, DomainError>;
+
     /// Find a transaction by hash.
     async fn find_by_hash(&self, hash: &str) -> Result<Option<Transaction>, DomainError>;
 

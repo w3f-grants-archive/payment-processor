@@ -17,3 +17,4 @@ sha2 = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
 ctrlc = { workspace = true }
+refinery = { workspace = true }

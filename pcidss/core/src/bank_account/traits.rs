@@ -21,13 +21,16 @@ pub trait BankAccountTrait: Send + Sync {
     ) -> Result<Option<BankAccount>, DomainError>;
 
     /// Create a new bank account.
-    async fn create(&self, bank_account: &BankAccountCreate) -> Result<BankAccount, DomainError>;
+    async fn create(
+        &self,
+        bank_account_create: &BankAccountCreate,
+    ) -> Result<BankAccount, DomainError>;
 
     /// Update a bank account by unique identifier.
     async fn update(
         &self,
         id: &Uuid,
-        bank_account: &BankAccountUpdate,
+        bank_account_update: &BankAccountUpdate,
     ) -> Result<BankAccount, DomainError>;
 
     /// Delete a bank account by unique identifier.

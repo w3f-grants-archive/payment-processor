@@ -2,7 +2,7 @@
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::types::TransactionType;
+use crate::{bank_account::models::BankAccountUpdate, types::TransactionType};
 
 #[derive(Debug, Clone)]
 pub struct TransactionCreate {
@@ -45,7 +45,7 @@ impl TransactionCreate {
 }
 
 /// `Transaction` is a model for a transaction.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transaction {
     /// Unique identifier of the transaction.
     pub id: Uuid,
@@ -84,10 +84,23 @@ impl From<&tokio_postgres::Row> for Transaction {
         Self {
             id: row.get("id"),
             hash: row.get("hash"),
-            from: row.get("from"),
-            to: row.get("to"),
-            amount: row.get("amount"),
-            transaction_type: row.get("transaction_type"),
+            from: row.get("beneficiary"),
+            to: row.get("recipient"),
+            amount: row.get::<&str, i32>("amount") as u32,
+            transaction_type: row.get::<&str, i32>("transaction_type") as u32,
+        }
+    }
+}
+
+impl Into<BankAccountUpdate> for &Transaction {
+    fn into(self) -> BankAccountUpdate {
+        BankAccountUpdate {
+            id: self.from,
+            amount: self.amount,
+            transaction_type: match self.transaction_type {
+                1 => TransactionType::Credit,
+                _ => TransactionType::Debit,
+            },
         }
     }
 }

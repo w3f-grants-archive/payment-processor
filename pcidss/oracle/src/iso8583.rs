@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use chrono::Datelike;
+use chrono::Utc;
 use iso8583_rs::iso8583::iso_spec::{new_msg, IsoMsg, Spec};
 use tracing::debug;
 
@@ -17,6 +17,7 @@ use op_core::{
 use super::types::*;
 use crate::constants::{POPULATED_ISO_MSG_FIELD_NUMBERS, RESPONSE_CODE_FIELD_NUMBER};
 
+/// ISO-8583 message processor
 #[derive(Clone)]
 pub struct Iso8583MessageProcessor {
     /// Spec for the ISO-8583 message
@@ -103,19 +104,18 @@ impl Iso8583MessageProcessor {
             MTI::AuthorizationResponse.into(),
         )?;
 
-        debug!(
-            "Bmp child value: {:?} is on {}",
-            iso_msg.bmp,
-            iso_msg.bmp.is_on(2)
-        );
         // extract necessary fields from the ISO message
-        let card_number = iso_msg.bmp_child_value(4)?;
+        let card_number = iso_msg.bmp_child_value(2)?;
+        let acquiring_institution_id = iso_msg.bmp_child_value(32)?;
 
-        if let Ok(Some(bank_account)) = self
-            .bank_account_controller
-            .find_by_card_number(&card_number)
-            .await
-        {
+        let (maybe_beneficiary_account, maybe_recipient_account) = futures::join!(
+            self.bank_account_controller
+                .find_by_card_number(&card_number),
+            self.bank_account_controller
+                .find_by_card_number(&acquiring_institution_id)
+        );
+
+        if let Ok(Some(bank_account)) = maybe_beneficiary_account {
             let validation_result = self
                 .validate_with_bank_account(iso_msg, &bank_account)
                 .await?;
@@ -126,13 +126,10 @@ impl Iso8583MessageProcessor {
                 return Ok(());
             }
 
-            let amount: u32 = iso_msg
-                .get_field_value(&"amount".to_string())?
-                .trim()
-                .parse()?;
+            let amount: u32 = iso_msg.bmp_child_value(4)?.trim().parse()?;
 
             // perform the transaction
-            let update_account = BankAccountUpdate {
+            let update_beneficiary_account = BankAccountUpdate {
                 id: bank_account.id,
                 amount,
                 transaction_type: TransactionType::Credit,
@@ -140,7 +137,7 @@ impl Iso8583MessageProcessor {
 
             if let Ok(updated_bank_account) = self
                 .bank_account_controller
-                .update(&bank_account.id, &update_account)
+                .update(&bank_account.id, &update_beneficiary_account)
                 .await
             {
                 debug!(
@@ -148,15 +145,30 @@ impl Iso8583MessageProcessor {
                     updated_bank_account
                 );
 
+                let iso_msg_raw = iso_msg.assemble().expect("should be working");
+                let mut recipient_id = None;
+
+                if let Ok(Some(recipient_account)) = maybe_recipient_account {
+                    let update_recipient_account = BankAccountUpdate {
+                        id: recipient_account.id,
+                        amount,
+                        transaction_type: TransactionType::Debit,
+                    };
+                    self.bank_account_controller
+                        .update(&recipient_account.id, &update_recipient_account)
+                        .await?;
+                    recipient_id = Some(recipient_account.id);
+                }
+
                 // Insert the transaction into the database
                 self.transaction_controller
                     .create(&TransactionCreate::new(
                         bank_account.id,
-                        None, // TODO: set the receiving bank account
+                        recipient_id,
                         amount,
                         TransactionType::Credit,
                         bank_account.nonce,
-                        iso_msg.assemble().expect("should be working"),
+                        iso_msg_raw,
                     ))
                     .await?;
 
@@ -185,7 +197,7 @@ impl Iso8583MessageProcessor {
 
         // extract transaction hash from the ISO message
         // first 64 characters are the hash
-        let private_data = iso_msg.get_field_value(&"private_data".to_string())?;
+        let private_data = iso_msg.bmp_child_value(127)?;
 
         let (tx_hash, _) = private_data.split_at(64);
 
@@ -248,7 +260,7 @@ impl Iso8583MessageProcessor {
     /// Does same sanity checks
     async fn validate(&self, iso_msg: &IsoMsg) -> Result<ResponseCodes, DomainError> {
         // extract necessary fields from the ISO message
-        let card_number = iso_msg.get_field_value(&"card_number".to_string())?;
+        let card_number = iso_msg.bmp_child_value(2)?;
 
         if let Ok(Some(bank_account)) = self
             .bank_account_controller
@@ -268,27 +280,31 @@ impl Iso8583MessageProcessor {
         iso_msg: &IsoMsg,
         bank_account: &BankAccount,
     ) -> Result<ResponseCodes, DomainError> {
-        let card_expiration = iso_msg.get_field_value(&"card_expiration".to_string())?;
-        let transaction_timestamp =
-            iso_msg.get_field_value(&"transaction_timestamp".to_string())?;
-        let cvv = iso_msg.get_field_value(&"cvv".to_string())?;
+        // format is: "{}D{}C{}", card_number, exp_date, cvv
+        let track_2_data = iso_msg.bmp_child_value(35)?;
+        let mut parts = track_2_data.split("D");
+        let _ = parts.next().unwrap_or("");
+        let remainder = parts.next().unwrap_or("");
+        let mut parts = remainder.split("C");
+        let card_expiration = parts.next().unwrap_or("");
+        let cvv = parts.next().unwrap();
 
-        let amount: u32 = iso_msg
-            .get_field_value(&"amount".to_string())?
-            .trim()
-            .parse()?;
+        // %m%d%H%M%S format
+        let transaction_timestamp = iso_msg.bmp_child_value(7)?;
+
+        let amount: u32 = iso_msg.bmp_child_value(4)?.trim().parse()?;
+
+        let now = Utc::now();
 
         // validate the transaction timestamp
         // MMDDHHMMSS format, parse it
-        if transaction_timestamp.len() != 10 {
+        if !utils::validate_timestamp(transaction_timestamp) {
             return Ok(ResponseCodes::InvalidTransaction);
         }
 
         // validate the card expiration date
-        let (year, month) = card_expiration.split_at(2);
-
-        if year != bank_account.card_expiration_date.year().to_string()
-            || month == bank_account.card_expiration_date.month().to_string()
+        if card_expiration != bank_account.card_expiration_date.format("%m%y").to_string()
+            || bank_account.card_expiration_date <= now
         {
             return Ok(ResponseCodes::ExpiredCard);
         }
@@ -304,5 +320,26 @@ impl Iso8583MessageProcessor {
         }
 
         return Ok(ResponseCodes::Approved);
+    }
+}
+
+/// Utility functions
+mod utils {
+    use chrono::Datelike;
+
+    /// Validate timestamp
+    /// MMDDHHMMSS format, parse it
+    pub(crate) fn validate_timestamp(timestamp: String) -> bool {
+        // %m%d%H%M%S format
+        let (mo, rest) = timestamp.split_at(2);
+        let (dd, rest) = rest.split_at(2);
+        let (_hh, rest) = rest.split_at(2);
+        let (_mi, rest) = rest.split_at(2);
+        let (_ss, _) = rest.split_at(2);
+
+        // we allow 30 seconds of difference
+        let now = chrono::Utc::now();
+
+        timestamp.len() == 10 && Ok(now.day()) == dd.parse() && Ok(now.month()) == mo.parse()
     }
 }

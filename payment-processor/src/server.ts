@@ -141,7 +141,7 @@ export default class Server {
     // Format is `MMDDhhmmss`
     const transmissionDate = `${monthDay}${timeDate}`;
 
-    const track2 = `${cardNumber}D${cardExpiration}C${cvv}758928889`;
+    const track2 = `${cardNumber}D${cardExpiration}C${cvv}`;
 
     return {
       0: MTI.AuthorizationRequest,
@@ -153,16 +153,13 @@ export default class Server {
       13: monthDay,
       14: cardExpiration.replace("/", ""),
       18: MCC.ComputerNetworkServices,
-      22: "051", // Point of Service Entry Mode
-      23: "001", // Card Sequence Number
-      26: "12", // Point of Service PIN Capture Code
-      32: "423935", // Acquiring institution ID
+      32: "123456", // Acquiring institution ID, hard coded, for now
       35: track2, // Track-2 Data
       41: "12345678", // Card Acceptor Terminal Identification
       42: "ABCDEFGH_000001", // Card Acceptor Identification Code
       43: "Dummy business name, Dummy City, 1200000", // Card Acceptor Name/Location
       49: "997", // Currency Code, Transaction, USD - 997, EUR - 978
-      126: "0".repeat(100), // dummy 50 bytes, will be replaced in the future
+      126: "0".repeat(100), // dummy 100 bytes, will be replaced in the future
       127: "0".repeat(50), // dummy 50 bytes, will be replaced in the future
     };
   }

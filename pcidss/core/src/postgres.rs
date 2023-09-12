@@ -2,10 +2,17 @@ use std::error::Error;
 
 use deadpool_postgres::Manager;
 use deadpool_postgres::Pool;
-
-use super::error::DomainError;
+use tokio_postgres::Config;
 use tokio_postgres::NoTls;
 
+use super::error::DomainError;
+
+mod embedded {
+    use refinery::embed_migrations;
+    embed_migrations!("migrations");
+}
+
+/// Postgres database configuration
 pub struct PostgresConfig {
     pub host: String,
     pub user: String,
@@ -22,6 +29,8 @@ impl From<PostgresConfig> for tokio_postgres::Config {
         pg_config.password(&value.password);
         pg_config.dbname(&value.name);
         pg_config.host(&value.host);
+        pg_config.ssl_mode(tokio_postgres::config::SslMode::Disable);
+        pg_config.port(5432);
 
         pg_config
     }
@@ -37,17 +46,49 @@ pub fn init(postgres_config: PostgresConfig) -> Result<deadpool_postgres::Pool, 
     Ok(Pool::builder(mgr).max_size(pool_max).build()?)
 }
 
+/// Runs database migrations
+///
+/// When run first time, it will create the tables for `BankAccount` and `Transaction`
+pub async fn run_migrations(postgres_config: Config) -> Result<(), Box<dyn Error>> {
+    println!("Running migrations");
+    let (mut client, connection) = postgres_config.connect(tokio_postgres::NoTls).await?;
+
+    let handler = tokio::spawn(async move {
+        connection.await.unwrap();
+    });
+
+    let migration_report = embedded::migrations::runner()
+        .run_async(&mut client)
+        .await?;
+
+    for migration in migration_report.applied_migrations() {
+        println!(
+            "Migration Applied -  Name: {}, Version: {}",
+            migration.name(),
+            migration.version()
+        );
+    }
+
+    handler.abort();
+    Ok(())
+}
+
 pub async fn mock_init() -> Result<Pool, DomainError> {
     use std::env;
 
+    // This config is used for tests
     let postgres_config = PostgresConfig {
         host: env::var("POSTGRES_HOST").unwrap_or("localhost".to_string()),
         user: env::var("POSTGRES_USER").unwrap_or("postgres".to_string()),
         password: env::var("POSTGRES_PASSWORD").unwrap_or("postgres".to_string()),
-        name: env::var("POSTGRES_NAME").unwrap_or("test".to_string()),
+        name: env::var("POSTGRES_DB_NAME").unwrap_or("unittests".to_string()),
         pool_max: 100,
     };
 
+    // This config is used for preparing the ground for tests
+    // It resets the testing database and runs the migrations, since Postgres doesn't allow
+    // dropping the database while there are active connections, we need to connect to the
+    // default database and run the commands from there
     let mut pg_config = tokio_postgres::Config::new();
     pg_config.user(&postgres_config.user);
     pg_config.password(&postgres_config.password);
@@ -61,6 +102,7 @@ pub async fn mock_init() -> Result<Pool, DomainError> {
 
     let stmt = client.prepare("select datname from pg_database;").await?;
     let result = client.query(&stmt, &[]).await?;
+
     let mut databases: Vec<String> = vec![];
     result
         .into_iter()
@@ -68,19 +110,27 @@ pub async fn mock_init() -> Result<Pool, DomainError> {
 
     if databases.contains(&postgres_config.name) {
         let stmt = client
-            .prepare(&format!("drop database {};", postgres_config.name))
+            .prepare(&format!("drop database {:?};", postgres_config.name))
             .await?;
         client.execute(&stmt, &[]).await?;
     }
 
     let stmt = client
-        .prepare(&format!("create database {};", postgres_config.name))
+        .prepare(&format!("create database {:?};", postgres_config.name))
         .await?;
     client.execute(&stmt, &[]).await?;
 
     handler.abort();
 
-    let mgr = Manager::new(pg_config, tokio_postgres::NoTls);
+    // Now create the pool
+    let test_pg_config: Config = postgres_config.into();
 
-    Ok(Pool::builder(mgr).max_size(10).build()?)
+    let mgr = Manager::new(test_pg_config.clone(), tokio_postgres::NoTls);
+    let pg_pool = Pool::builder(mgr).max_size(10).build()?;
+
+    run_migrations(test_pg_config)
+        .await
+        .expect("Error to run migrations");
+
+    Ok(pg_pool)
 }

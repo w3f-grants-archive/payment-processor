@@ -38,6 +38,7 @@ tokio-postgres = { version = "0.7.8", features = [
     "with-chrono-0_4",
     "with-uuid-1",
 ] }
+refinery = { version = "0.8", features = ["tokio-postgres"] }
 
 # Logging
 dotenv = "0.15.0"

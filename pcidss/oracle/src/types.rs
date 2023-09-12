@@ -54,8 +54,6 @@ pub enum ResponseCodes {
     DoNotHonor,
     // 12 - Invalid transaction
     InvalidTransaction,
-    // 13 - Invalid amount, if it overflows
-    InvalidAmount,
     // 14 - Invalid PAN
     InvalidCardNumber,
     // 51 - Insufficient funds, if it underflows
@@ -70,7 +68,6 @@ impl Into<&str> for ResponseCodes {
             ResponseCodes::Approved => "00",
             ResponseCodes::DoNotHonor => "05",
             ResponseCodes::InvalidTransaction => "12",
-            ResponseCodes::InvalidAmount => "13",
             ResponseCodes::InvalidCardNumber => "14",
             ResponseCodes::InsufficientFunds => "51",
             ResponseCodes::ExpiredCard => "54",

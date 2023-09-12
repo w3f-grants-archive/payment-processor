@@ -28,7 +28,7 @@ impl BankAccountTrait for PgBankAccount {
     async fn find_by_id(&self, id: &Uuid) -> Result<Option<BankAccount>, DomainError> {
         let client = self.pool.get().await?;
         let stmt = client
-            .prepare("SELECT * FROM bank_account WHERE id = $1")
+            .prepare(r#"SELECT * FROM bank_account WHERE id = $1;"#)
             .await?;
 
         if let Some(result) = client.query_opt(&stmt, &[&id]).await? {
@@ -44,7 +44,7 @@ impl BankAccountTrait for PgBankAccount {
     ) -> Result<Option<BankAccount>, DomainError> {
         let client = self.pool.get().await?;
         let stmt = client
-            .prepare("SELECT * FROM bank_account WHERE card_number = $1")
+            .prepare(r#"SELECT * FROM bank_account WHERE card_number = $1;"#)
             .await?;
 
         if let Some(result) = client.query_opt(&stmt, &[&card_number]).await? {
@@ -69,11 +69,21 @@ impl BankAccountTrait for PgBankAccount {
         bank_account.try_update(bank_account_update).await?;
 
         let stmt = client
-            .prepare("UPDATE bank_account SET balance = $1, nonce = $2 WHERE id = $3 RETURNING *")
+            .prepare(
+                r#"UPDATE bank_account SET balance = $1, nonce = $2, updated_at = $3 WHERE id = $4 RETURNING *;"#,
+            )
             .await?;
 
         let result = client
-            .query_one(&stmt, &[&bank_account.balance, &bank_account.nonce, &id])
+            .query_one(
+                &stmt,
+                &[
+                    &(bank_account.balance as i32),
+                    &(bank_account.nonce as i32),
+                    &chrono::Utc::now(),
+                    &id,
+                ],
+            )
             .await?;
 
         Ok((&result).into())
@@ -84,13 +94,14 @@ impl BankAccountTrait for PgBankAccount {
         bank_account_create: &BankAccountCreate,
     ) -> Result<BankAccount, DomainError> {
         let client = self.pool.get().await?;
+
         let stmt = client
             .prepare(
-                "INSERT INTO bank_account (id, card_number, card_holder_first_name, card_holder_last_name, card_expiration_date, card_cvv, balance, nonce) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+                r#"INSERT INTO bank_account (id, card_number, card_holder_first_name, card_holder_last_name, card_expiration_date, card_cvv, balance, nonce) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;"#,
             )
             .await?;
 
-        let row = client
+        let row = &client
             .query_one(
                 &stmt,
                 &[
@@ -100,19 +111,19 @@ impl BankAccountTrait for PgBankAccount {
                     &bank_account_create.card_holder_last_name,
                     &bank_account_create.card_expiration_date,
                     &bank_account_create.card_cvv,
-                    &0_u32, // Initial balance is 0
-                    &0_u32, // Initial nonce is 0
+                    &(bank_account_create.balance as i32), // Initial balance is 0
+                    &0_i32,                                // Initial nonce is 0
                 ],
             )
             .await?;
 
-        Ok((&row).into())
+        Ok((row).into())
     }
 
     async fn delete(&self, id: &Uuid) -> Result<(), DomainError> {
         let client = self.pool.get().await?;
         let stmt = client
-            .prepare("DELETE FROM bank_account WHERE id = $1")
+            .prepare("DELETE FROM bank_account WHERE id = $1;")
             .await?;
         client.execute(&stmt, &[&id]).await?;
         Ok(())
