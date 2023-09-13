@@ -18,3 +18,4 @@ chrono = { workspace = true }
 futures = { workspace = true }
 ctrlc = { workspace = true }
 refinery = { workspace = true }
+serde = { workspace = true }

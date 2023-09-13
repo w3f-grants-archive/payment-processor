@@ -5,6 +5,7 @@ create table if not exists bank_transaction (
     recipient uuid,
     amount int not null,
     transaction_type int not null,
+    reversed boolean default false,
     created_at timestamptz default now(),
     updated_at timestamptz default now(),
     foreign key (beneficiary) references bank_account(id)

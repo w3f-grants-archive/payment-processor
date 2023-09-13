@@ -1565,6 +1565,7 @@ dependencies = [
  "iso8583_rs",
  "log",
  "refinery",
+ "serde",
  "sha2",
  "thiserror",
  "tokio",

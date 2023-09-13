@@ -92,4 +92,15 @@ impl TransactionTrait for PgTransaction {
 
         Ok((&row).into())
     }
+
+    async fn update(&self, id: &Uuid) -> Result<Transaction, DomainError> {
+        let client = self.pool.get().await?;
+        let stmt = client
+            .prepare("UPDATE bank_transaction SET reversed = true WHERE id = $1 RETURNING *")
+            .await?;
+
+        let row = client.query_one(&stmt, &[&id]).await?;
+
+        Ok((&row).into())
+    }
 }

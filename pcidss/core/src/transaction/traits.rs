@@ -24,4 +24,8 @@ pub trait TransactionTrait: Send + Sync {
 
     /// Create a new transaction.
     async fn create(&self, transaction: &TransactionCreate) -> Result<Transaction, DomainError>;
+
+    /// Update a transaction.
+    /// Mainly used to update `reversed` field.
+    async fn update(&self, id: &Uuid) -> Result<Transaction, DomainError>;
 }

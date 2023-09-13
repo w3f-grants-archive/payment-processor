@@ -40,7 +40,7 @@ impl Iso8583MessageProcessor {
 
                 let res_msg_type = match req_msg_type.as_str().try_into() {
                     Ok(MTI::AuthorizationRequest) => MTI::AuthorizationResponse,
-                    Ok(MTI::ReversalRequest) => MTI::FinancialResponse,
+                    Ok(MTI::ReversalRequest) => MTI::ReversalResponse,
                     _ => {
                         return Err(DomainError::ApiError(
                             "Unsupported message type".to_string(),
@@ -50,8 +50,8 @@ impl Iso8583MessageProcessor {
 
                 // Create a new response message
                 let mut res_iso_msg = new_msg(
-                    &iso_msg.spec,
-                    iso_msg.spec.get_message_from_header(res_msg_type.into())?,
+                    &self.spec,
+                    self.spec.get_message_from_header(res_msg_type.into())?,
                 );
 
                 // don't copy the fields that we have already set
@@ -194,7 +194,7 @@ impl Iso8583MessageProcessor {
 
         // extract transaction hash from the ISO message
         // first 64 characters are the hash
-        let private_data = iso_msg.bmp_child_value(127)?;
+        let private_data = iso_msg.bmp_child_value(126)?;
 
         let (tx_hash, _) = private_data.split_at(64);
 
@@ -207,33 +207,41 @@ impl Iso8583MessageProcessor {
         }
 
         if let Ok(Some(transaction)) = self.transaction_controller.find_by_hash(tx_hash).await {
-            // perform the transaction
+            // early return if already reversed
+            if transaction.reversed {
+                debug!("Transaction already reversed {:?}", &transaction.hash);
+                iso_msg.set_on(
+                    RESPONSE_CODE_FIELD_NUMBER,
+                    ResponseCodes::InvalidTransaction.into(),
+                )?;
+                return Ok(());
+            }
+
+            // updates to bank accounts
             let update_account = BankAccountUpdate {
                 id: transaction.from,
                 amount: transaction.amount,
                 transaction_type: TransactionType::Debit,
             };
 
-            if let Ok(updated_bank_account) = self
+            if let Ok(_) = self
                 .bank_account_controller
                 .update(&transaction.from, &update_account)
                 .await
             {
-                debug!(
-                    "Transaction successful, updated bank account: {:?}",
-                    updated_bank_account
-                );
-                // Insert the transaction into the database
-                self.transaction_controller
-                    .create(&TransactionCreate::new(
-                        transaction.from,
-                        None, // TODO: set the receiving bank account
-                        transaction.amount,
-                        TransactionType::Debit,
-                        updated_bank_account.nonce,
-                        iso_msg.assemble().expect("should be working"),
-                    ))
-                    .await?;
+                if let Some(beneficiary_id) = transaction.to {
+                    let update_recipient_account = BankAccountUpdate {
+                        id: beneficiary_id,
+                        amount: transaction.amount,
+                        transaction_type: TransactionType::Credit,
+                    };
+                    self.bank_account_controller
+                        .update(&beneficiary_id, &update_recipient_account)
+                        .await?;
+                }
+
+                // Flags the transaction as reversed
+                self.transaction_controller.update(&transaction.id).await?;
 
                 iso_msg.set_on(RESPONSE_CODE_FIELD_NUMBER, ResponseCodes::Approved.into())?;
             } else {
@@ -254,7 +262,14 @@ impl Iso8583MessageProcessor {
 
     /// Validate Iso8583 message
     ///
-    /// Does same sanity checks
+    /// Does some sanity checks:
+    ///
+    /// - Timestamp should be valid
+    /// - Card expiration date should match and be in the future
+    /// - CVV should match
+    /// - Amount should be less than or equal to the balance
+    ///
+    /// Returns the response code according to ISO-8583 specification
     async fn validate(&self, iso_msg: &IsoMsg) -> Result<ResponseCodes, DomainError> {
         // extract necessary fields from the ISO message
         let card_number = iso_msg.bmp_child_value(2)?;

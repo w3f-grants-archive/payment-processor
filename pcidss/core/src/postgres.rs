@@ -2,6 +2,7 @@ use std::error::Error;
 
 use deadpool_postgres::Manager;
 use deadpool_postgres::Pool;
+use log::info;
 use tokio_postgres::Config;
 use tokio_postgres::NoTls;
 
@@ -13,6 +14,7 @@ mod embedded {
 }
 
 /// Postgres database configuration
+#[derive(Debug, Clone)]
 pub struct PostgresConfig {
     pub host: String,
     pub user: String,
@@ -50,7 +52,7 @@ pub fn init(postgres_config: PostgresConfig) -> Result<deadpool_postgres::Pool, 
 ///
 /// When run first time, it will create the tables for `BankAccount` and `Transaction`
 pub async fn run_migrations(postgres_config: Config) -> Result<(), Box<dyn Error>> {
-    println!("Running migrations");
+    info!("Running migrations");
     let (mut client, connection) = postgres_config.connect(tokio_postgres::NoTls).await?;
 
     let handler = tokio::spawn(async move {
@@ -62,7 +64,7 @@ pub async fn run_migrations(postgres_config: Config) -> Result<(), Box<dyn Error
         .await?;
 
     for migration in migration_report.applied_migrations() {
-        println!(
+        info!(
             "Migration Applied -  Name: {}, Version: {}",
             migration.name(),
             migration.version()
@@ -81,7 +83,7 @@ pub async fn mock_init() -> Result<Pool, DomainError> {
         host: env::var("POSTGRES_HOST").unwrap_or("localhost".to_string()),
         user: env::var("POSTGRES_USER").unwrap_or("postgres".to_string()),
         password: env::var("POSTGRES_PASSWORD").unwrap_or("postgres".to_string()),
-        name: env::var("POSTGRES_DB_NAME").unwrap_or("unittests".to_string()),
+        name: env::var("POSTGRES_DB_NAME").unwrap_or("mockdb".to_string()),
         pool_max: 100,
     };
 

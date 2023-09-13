@@ -45,7 +45,7 @@ impl TransactionCreate {
 }
 
 /// `Transaction` is a model for a transaction.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Transaction {
     /// Unique identifier of the transaction.
     pub id: Uuid,
@@ -59,6 +59,8 @@ pub struct Transaction {
     pub amount: u32,
     /// Type of the transaction.
     pub transaction_type: u32,
+    /// Is it reversed?
+    pub reversed: bool,
 }
 
 impl From<&TransactionCreate> for Transaction {
@@ -75,6 +77,7 @@ impl From<&TransactionCreate> for Transaction {
             to: value.to,
             amount: value.amount,
             transaction_type: value.transaction_type.clone().into(),
+            reversed: false,
         }
     }
 }
@@ -88,6 +91,7 @@ impl From<&tokio_postgres::Row> for Transaction {
             to: row.get("recipient"),
             amount: row.get::<&str, i32>("amount") as u32,
             transaction_type: row.get::<&str, i32>("transaction_type") as u32,
+            reversed: row.get("reversed"),
         }
     }
 }

@@ -25,7 +25,7 @@ impl Into<&str> for MTI {
             MTI::FinancialRequest => "0200",
             MTI::FinancialResponse => "0210",
             MTI::ReversalRequest => "0400",
-            MTI::ReversalResponse => "0410,",
+            MTI::ReversalResponse => "0410",
         }
     }
 }

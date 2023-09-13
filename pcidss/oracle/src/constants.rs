@@ -23,3 +23,21 @@ pub const POPULATED_ISO_MSG_FIELD_NUMBERS: [u32; 17] = [
 
 /// Response Code field
 pub const RESPONSE_CODE_FIELD_NUMBER: u32 = 39;
+
+/// Represents truncated version of dev accounts
+/// Explicitly used in tests and dev mode
+pub(crate) type DevAccount = (&'static str, &'static str, &'static str, u32);
+
+// Development accounts
+pub const DEV_ACCOUNTS: [DevAccount; 6] = [
+    // Healthy account
+    ("Alice", "4169812345678901", "123", 1000),
+    // Zero balance case
+    ("Bob", "4169812345678902", "124", 0),
+    ("Charlie", "4169812345678903", "125", 12345),
+    ("Dave", "4169812345678904", "126", 1000000),
+    // Expired card
+    ("Eve", "4169812345678905", "127", 1000),
+    // Mock acquirer account, i.e merchant
+    ("Acquirer", "123456", "000", 1000000000),
+];

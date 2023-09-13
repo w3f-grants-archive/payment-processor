@@ -10,7 +10,6 @@ Contains three key parts for ISO-8553 message processing:
 2. Server application for processing requests from merchant application
 3. PCIDSS compliant gateway simulator
 
-
 ### Demo merchant application
 
 Web application that is mainly a checkout page for a merchant.
@@ -22,4 +21,3 @@ NodeJs server that is responsible for processing requests from merchant applicat
 ### PCIDSS compliant gateway simulator
 
 RabbitMQ based message broker combined with a Rust service that is for syncing with Substrate chain.
-

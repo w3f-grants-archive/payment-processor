@@ -3,25 +3,14 @@
 use std::sync::Arc;
 
 use chrono::{Months, Utc};
-use deadpool_postgres::Pool;
 use op_api::{bank_account::PgBankAccount, transaction::PgTransaction};
 use op_core::{
     bank_account::{models::BankAccountCreate, traits::BankAccountTrait},
     postgres::mock_init,
     transaction::traits::TransactionTrait,
 };
-use tokio::sync::OnceCell;
 
-use crate::iso8583::Iso8583MessageProcessor;
-
-static INIT_DB: OnceCell<Pool> = OnceCell::const_new();
-
-async fn get_db() -> Pool {
-    INIT_DB
-        .get_or_init(|| async { mock_init().await.expect("Error to init database to tests") })
-        .await
-        .clone()
-}
+use crate::{constants::DEV_ACCOUNTS, iso8583::Iso8583MessageProcessor};
 
 /// Mock implementation of the Oracle API server.
 #[derive(Clone)]
@@ -33,7 +22,7 @@ pub struct MockProcessorImpl {
 impl MockProcessorImpl {
     /// Creates a new instance of the mock processor
     pub async fn new() -> Self {
-        let pg_pool = get_db().await;
+        let pg_pool = mock_init().await.expect("Error to init database to tests");
         let pg_pool = Arc::new(pg_pool);
 
         let bank_account_trait: Arc<dyn BankAccountTrait> =
@@ -98,20 +87,3 @@ macro_rules! assert_err {
         assert_eq!($x, Err($y.into()));
     };
 }
-
-/// Represents truncated version of dev accounts
-pub(crate) type DevAccount = (&'static str, &'static str, &'static str, u32);
-
-// Development accounts
-pub const DEV_ACCOUNTS: [DevAccount; 6] = [
-    // Healthy account
-    ("Alice", "4169812345678901", "123", 1000),
-    // Zero balance case
-    ("Bob", "4169812345678902", "124", 0),
-    ("Charlie", "4169812345678903", "125", 12345),
-    ("Dave", "4169812345678904", "126", 1000000),
-    // Expired card
-    ("Eve", "4169812345678905", "127", 1000),
-    // Mock acquirer account, i.e merchant
-    ("Acquirer", "123456", "000", 1000000000),
-];

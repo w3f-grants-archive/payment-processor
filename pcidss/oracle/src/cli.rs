@@ -26,6 +26,9 @@ pub struct Cli {
     /// RPC port
     #[arg(long, default_value = "3030")]
     pub rpc_port: u16,
+    /// Development mode
+    #[arg(long)]
+    pub dev: bool,
 }
 
 impl Cli {
