@@ -61,7 +61,7 @@ const Checkout = () => {
       <div className="sr-main">
         <section className="container">
           <div>
-            <h1>Single photo</h1>
+            <h1>Random photo</h1>
             <h4>Purchase an original photo</h4>
             <div className="pasha-image">
               <img
@@ -102,8 +102,8 @@ const Checkout = () => {
             </div>
             <p className="sr-legal-text">Number of copies (max 10)</p>
 
-            <button role="link" id="submit" type="submit">
-              Buy {formatPrice({ amount, quantity })}
+            <button style={{ pointerEvents: "none" }} id="submit">
+              {formatPrice({ amount, quantity })}
             </button>
           </form>
         </section>

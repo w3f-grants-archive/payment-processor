@@ -158,7 +158,8 @@ impl Iso8583MessageProcessor {
                 }
 
                 // Insert the transaction into the database
-                self.transaction_controller
+                let transaction = self
+                    .transaction_controller
                     .create(&TransactionCreate::new(
                         bank_account.id,
                         recipient_id,
@@ -169,6 +170,8 @@ impl Iso8583MessageProcessor {
                     ))
                     .await?;
 
+                // set the transaction hash in the ISO message
+                iso_msg.set_on(126, &transaction.hash)?;
                 iso_msg.set_on(RESPONSE_CODE_FIELD_NUMBER, ResponseCodes::Approved.into())?;
             } else {
                 iso_msg.set_on(

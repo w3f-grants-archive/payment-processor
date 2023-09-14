@@ -8,7 +8,7 @@ use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use jsonrpsee_types::error::ErrorCode;
 use log::info;
 use op_api::{bank_account::PgBankAccount, transaction::PgTransaction};
-use op_core::bank_account::models::BankAccountCreate;
+use op_core::bank_account::models::{BankAccount, BankAccountCreate};
 use op_core::transaction::models::Transaction;
 use op_core::{
     bank_account::traits::BankAccountTrait, error::DomainError,
@@ -29,6 +29,10 @@ pub trait OracleApi<IsoMsg> {
     /// Get transactions by card number
     #[method(name = "get_transactions")]
     async fn get_transactions(&self, card_number: String) -> RpcResult<Vec<Transaction>>;
+
+    /// Get bank account by card number
+    #[method(name = "get_bank_account")]
+    async fn get_bank_account(&self, card_number: String) -> RpcResult<BankAccount>;
 }
 
 /// PCIDSS Compliant Oracle RPC API implementation
@@ -88,6 +92,17 @@ impl OracleApiServer<IsoMsg> for OracleApiImpl {
 
                 error_code.into()
             })
+    }
+
+    async fn get_bank_account(&self, card_number: String) -> RpcResult<BankAccount> {
+        log::debug!("Received get_bank_account request: {:?}", card_number);
+
+        self.processor
+            .bank_account_controller
+            .find_by_card_number(&card_number)
+            .await
+            .map_err(|_| ErrorCode::InvalidParams)?
+            .ok_or(ErrorCode::InvalidParams.into())
     }
 }
 

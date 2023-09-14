@@ -60,7 +60,7 @@ pub struct BankAccountUpdate {
 }
 
 /// Extremely simplified, dummy version of a bank account model.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BankAccount {
     /// Unique identifier of the bank account.
     pub id: Uuid,

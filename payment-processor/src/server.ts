@@ -55,11 +55,44 @@ export default class Server {
       res.send("Health check");
     });
 
-    router.post("/pos", (req: express.Request, res: express.Response) =>
+    router.get("/txs", async (req: express.Request, res: express.Response) => {
+      this.fetchTransactions(req, res);
+    });
+
+    router.post("/pos", async (req: express.Request, res: express.Response) =>
       this.doPayment(req, res)
     );
 
+    router.post(
+      "/reverse",
+      async (req: express.Request, res: express.Response) => {
+        this.doReverse(req, res);
+      }
+    );
+
     this.app.use(router);
+  }
+
+  /// Fetches transactions from the oracle for a given card number
+  private async fetchTransactions(req: express.Request, res: express.Response) {
+    try {
+      let { txHash } = req.query;
+
+      let msgResponse = await this.oracle_rpc.send("get_transactions", [
+        txHash,
+      ]);
+
+      res.status(200).json({
+        status: true,
+        message: "OK",
+        result: msgResponse,
+      });
+    } catch {
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+      });
+    }
   }
 
   // POS implementation
@@ -73,6 +106,44 @@ export default class Server {
   // 5. Wait for the response
   // 6. Send the response back to the client
   private async doPayment(req: express.Request, res: express.Response) {
+    const data = this.formIsoData(req.body);
+
+    const isopack = new iso8583(data);
+
+    console.log(
+      "Full message",
+      isopack.getIsoJSON(isopack.getBufferMessage(), {
+        lenEncoding: "hex",
+        bitmapEncoding: "hex",
+        secondaryBitmap: true,
+      })
+    );
+
+    try {
+      let msgResponse = await this.oracle_rpc.send("pcidss_submit_iso8583", [
+        Array.from(isopack.getBufferMessage().slice(2)),
+      ]);
+
+      await this.processResponse(msgResponse, res);
+    } catch {
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  // Reversal implementation
+  //
+  // This function does the following:
+  //
+  // 1. Extract variables from the request
+  // 2. Do some validation
+  // 3. Form ISO-8583 message
+  // 4. Send the message to the PCIDSS compliant oracle
+  // 5. Wait for the response
+  // 6. Send the response back to the client
+  private async doReverse(req: express.Request, res: express.Response) {
     const data = this.formIsoData(req.body);
 
     const isopack = new iso8583(data);
@@ -121,16 +192,17 @@ export default class Server {
 
     let message = responseCodeToMessage(responseCode);
 
+    let approved = responseCode === "00";
+
     res.status(200).json({
       status: responseCode === "00",
       message,
+      result: msg["126"],
     });
   }
 
   // Forms a custom data to be passed to `ISO8583` pack
   private formIsoData(body: RequestBody): Record<string, string> {
-    const { amount, cardNumber, cardExpiration, cvv }: RequestBody = body;
-
     const now = new Date();
 
     // Format is `hhmmss`
@@ -143,13 +215,18 @@ export default class Server {
       .map((v) => ensurePadded(v.toString(), 2))
       .join("");
 
+    const { amount, cardNumber, cardExpiration, cvv, txHash }: RequestBody =
+      body;
+
+    let isReversal = txHash !== null;
+
     // Format is `MMDDhhmmss`
     const transmissionDate = `${monthDay}${timeDate}`;
 
     const track2 = `${cardNumber}D${cardExpiration}C${cvv}`;
 
     return {
-      0: MTI.AuthorizationRequest,
+      0: isReversal ? MTI.ReversalRequest : MTI.AuthorizationRequest,
       2: cardNumber,
       3: ProcessingCode.Purchase,
       4: ensurePadded(amount, 12), // Amount is 12 characters long, check the length of amount and pad it with `0` from the left
@@ -164,7 +241,7 @@ export default class Server {
       42: "ABCDEFGH_000001", // Card Acceptor Identification Code
       43: "Dummy business name, Dummy City, 1200000", // Card Acceptor Name/Location
       49: "997", // Currency Code, Transaction, USD - 997, EUR - 978
-      126: "0".repeat(100), // dummy 100 bytes, will be replaced in the future
+      126: txHash ? txHash : "0".repeat(100), // dummy 100 bytes, will be replaced in the future
       127: "0".repeat(50), // dummy 50 bytes, will be replaced in the future
     };
   }

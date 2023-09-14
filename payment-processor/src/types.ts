@@ -8,12 +8,19 @@ export interface Routes {
   router: Router;
 }
 
+// Represents type of ISO8583 message
+export enum MessageType {
+  PaymentRequest = "PaymentRequest",
+  ReversalRequest = "ReversalRequest",
+}
+
 // Request body for the POS
 export interface RequestBody {
   amount: string;
   cardNumber: string;
   cardExpiration: string;
   cvv: string;
+  txHash: string | null;
 }
 
 // Common MTI types
