@@ -34,7 +34,10 @@ async fn main() -> io::Result<()> {
     let pg_pool_result = postgres::init(db_config.clone());
 
     // run migrations
-    let _ = run_migrations(db_config.into()).await;
+    if let Err(e) = run_migrations(db_config.into()).await {
+        log::error!("Could not run migrations {:?}", e);
+        std::process::exit(1)
+    }
 
     if pg_pool_result.is_err() {
         log::error!(

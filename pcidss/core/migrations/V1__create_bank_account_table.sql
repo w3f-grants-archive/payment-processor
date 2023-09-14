@@ -1,6 +1,6 @@
 create table if not exists bank_account (
     id uuid primary key,
-    card_number varchar(63) not null,
+    card_number varchar(63) not null unique,
     card_holder_first_name varchar(63) not null,
     card_holder_last_name varchar(63) not null,
     card_expiration_date timestamptz not null,

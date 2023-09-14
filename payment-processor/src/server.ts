@@ -8,6 +8,16 @@ import { ensurePadded, responseCodeToMessage } from "./utils";
 // @ts-ignore
 import iso8583 from "iso_8583";
 
+// Custom format for `126` field
+let CUSTOM_FORMATS = {
+  "126": {
+    ContentType: "ans",
+    Label: "Private data",
+    LenType: "llvar",
+    MaxLen: 100,
+  },
+};
+
 /**
  * Represents the server
  */
@@ -55,10 +65,6 @@ export default class Server {
       res.send("Health check");
     });
 
-    router.get("/txs", async (req: express.Request, res: express.Response) => {
-      this.fetchTransactions(req, res);
-    });
-
     router.post("/pos", async (req: express.Request, res: express.Response) =>
       this.doPayment(req, res)
     );
@@ -73,28 +79,6 @@ export default class Server {
     this.app.use(router);
   }
 
-  /// Fetches transactions from the oracle for a given card number
-  private async fetchTransactions(req: express.Request, res: express.Response) {
-    try {
-      let { txHash } = req.query;
-
-      let msgResponse = await this.oracle_rpc.send("get_transactions", [
-        txHash,
-      ]);
-
-      res.status(200).json({
-        status: true,
-        message: "OK",
-        result: msgResponse,
-      });
-    } catch {
-      res.status(500).json({
-        status: false,
-        message: "Internal server error",
-      });
-    }
-  }
-
   // POS implementation
   //
   // This function does the following:
@@ -107,8 +91,7 @@ export default class Server {
   // 6. Send the response back to the client
   private async doPayment(req: express.Request, res: express.Response) {
     const data = this.formIsoData(req.body);
-
-    const isopack = new iso8583(data);
+    const isopack = new iso8583(data, CUSTOM_FORMATS);
 
     console.log(
       "Full message",
@@ -121,6 +104,8 @@ export default class Server {
 
     try {
       let msgResponse = await this.oracle_rpc.send("pcidss_submit_iso8583", [
+        // slicing the first two bytes, because they are the length of the message
+        // RPC doesn't expect it
         Array.from(isopack.getBufferMessage().slice(2)),
       ]);
 
@@ -146,7 +131,7 @@ export default class Server {
   private async doReverse(req: express.Request, res: express.Response) {
     const data = this.formIsoData(req.body);
 
-    const isopack = new iso8583(data);
+    const isopack = new iso8583(data, CUSTOM_FORMATS);
 
     console.log(
       "Full message",
@@ -192,8 +177,6 @@ export default class Server {
 
     let message = responseCodeToMessage(responseCode);
 
-    let approved = responseCode === "00";
-
     res.status(200).json({
       status: responseCode === "00",
       message,
@@ -203,18 +186,19 @@ export default class Server {
 
   // Forms a custom data to be passed to `ISO8583` pack
   private formIsoData(body: RequestBody): Record<string, string> {
-    const now = new Date();
+    const isoNow = new Date();
+    const now = isoNow.toISOString();
 
+    console.log("Body", body);
     // Format is `hhmmss`
-    const timeDate = [now.getHours(), now.getMinutes(), now.getSeconds()]
-      .map((v) => ensurePadded(v.toString(), 2))
-      .join("");
+    const timeDate = [
+      now.slice(11, 13),
+      now.slice(14, 16),
+      now.slice(17, 19),
+    ].join("");
 
     // Format is `MMDD`
-    const monthDay = [now.getMonth() + 1, now.getDate()]
-      .map((v) => ensurePadded(v.toString(), 2))
-      .join("");
-
+    const monthDay = [now.slice(5, 7), now.slice(8, 10)].join("");
     const { amount, cardNumber, cardExpiration, cvv, txHash }: RequestBody =
       body;
 
@@ -223,7 +207,7 @@ export default class Server {
     // Format is `MMDDhhmmss`
     const transmissionDate = `${monthDay}${timeDate}`;
 
-    const track2 = `${cardNumber}D${cardExpiration}C${cvv}`;
+    const track2 = `${cardNumber}D${cardExpiration.replace("/", "")}C${cvv}`;
 
     return {
       0: isReversal ? MTI.ReversalRequest : MTI.AuthorizationRequest,
@@ -241,8 +225,7 @@ export default class Server {
       42: "ABCDEFGH_000001", // Card Acceptor Identification Code
       43: "Dummy business name, Dummy City, 1200000", // Card Acceptor Name/Location
       49: "997", // Currency Code, Transaction, USD - 997, EUR - 978
-      126: txHash ? txHash : "0".repeat(100), // dummy 100 bytes, will be replaced in the future
-      127: "0".repeat(50), // dummy 50 bytes, will be replaced in the future
+      126: txHash ? txHash : "0".repeat(99), // dummy 100 bytes, will be replaced in the future
     };
   }
 

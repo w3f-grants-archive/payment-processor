@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import Tab from "react-bootstrap/Tab";
 import Tabs from "react-bootstrap/Tabs";
 import Cards from "react-credit-cards";
+import toast, { Toaster } from "react-hot-toast";
 
 import "react-credit-cards/es/styles-compiled.css";
 import {
   formatCreditCardNumber,
   formatCVC,
   formatExpirationDate,
-  formatPrice,
 } from "../utils";
 
 const Checkout = () => {
@@ -21,10 +21,11 @@ const Checkout = () => {
     focus: "",
     name: "",
     number: "",
+    txHash: null,
   });
 
   useEffect(() => {
-    setAmount(100 * quantity);
+    setAmount(20 * quantity);
   }, [quantity]);
 
   const handleInputChange = ({ target }) => {
@@ -54,10 +55,37 @@ const Checkout = () => {
     e.preventDefault();
 
     // TODO: Call your backend to create the Checkout session.
+    console.log("cardDetails", cardDetails);
+
+    fetch("/pos/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cardNumber: cardDetails.number.replace(/\s+/g, ""),
+        cvv: cardDetails.cvc,
+        cardExpiration: cardDetails.expiry,
+        amount: amount.toString(),
+        txHash: cardDetails.txHash,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Response", data);
+        // go back to dashboard if approved
+        if (data.status) {
+          toast.success("Payment confirmed!");
+          window.location.href = "/";
+        } else {
+          toast.error("Transaction failed: " + data.message);
+        }
+      });
   };
 
   return (
     <div className="sr-root">
+      <Toaster position="top-center" reverseOrder={false} />
       <div className="sr-main">
         <section className="container">
           <div>
@@ -103,7 +131,7 @@ const Checkout = () => {
             <p className="sr-legal-text">Number of copies (max 10)</p>
 
             <button style={{ pointerEvents: "none" }} id="submit">
-              {formatPrice({ amount, quantity })}
+              {`Pay $${amount}`}
             </button>
           </form>
         </section>
@@ -185,12 +213,7 @@ const Checkout = () => {
               </div>
             </Tab>
 
-            <Tab
-              eventKey="Crypto"
-              title="Crypto"
-              disabled
-              itemRef="stuff"
-            ></Tab>
+            <Tab eventKey="Crypto" title="Crypto" disabled></Tab>
           </Tabs>
         </section>
       </div>

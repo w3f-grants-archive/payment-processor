@@ -1,7 +1,7 @@
 //! Constants used in the PCIDSS Gateway.
 
 /// Field numbers that we populate in the ISO message
-pub const POPULATED_ISO_MSG_FIELD_NUMBERS: [u32; 17] = [
+pub const POPULATED_ISO_MSG_FIELD_NUMBERS: [u32; 16] = [
     0,   // Message Type Indicator or MTI
     2,   // Primary account number, card number
     3,   // Processing code
@@ -18,7 +18,6 @@ pub const POPULATED_ISO_MSG_FIELD_NUMBERS: [u32; 17] = [
     43, // Card Acceptor Name/Location
     49, // Currency Code, Transaction, USD - 997, EUR - 978
     126, // Private data
-    127, // Private data, 100 characters long: this contains transaction hash if the transaction is a reversal
 ];
 
 /// Response Code field

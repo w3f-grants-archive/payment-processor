@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use chrono::Utc;
 use iso8583_rs::iso8583::iso_spec::{new_msg, IsoMsg, Spec};
+use log::info;
 use tracing::debug;
 
 use op_core::bank_account::models::BankAccount;
@@ -132,52 +133,56 @@ impl Iso8583MessageProcessor {
                 transaction_type: TransactionType::Credit,
             };
 
-            if let Ok(updated_bank_account) = self
+            match self
                 .bank_account_controller
                 .update(&bank_account.id, &update_beneficiary_account)
                 .await
             {
-                debug!(
-                    "Transaction successful, updated bank account: {:?}",
-                    updated_bank_account
-                );
+                Ok(updated_bank_account) => {
+                    info!(
+                        "Transaction successful, updated bank account: {:?}",
+                        updated_bank_account
+                    );
 
-                let iso_msg_raw = iso_msg.assemble().expect("should be working");
-                let mut recipient_id = None;
+                    let iso_msg_raw = iso_msg.assemble().expect("should be working");
+                    let mut recipient_id = None;
 
-                if let Ok(Some(recipient_account)) = maybe_recipient_account {
-                    let update_recipient_account = BankAccountUpdate {
-                        id: recipient_account.id,
-                        amount,
-                        transaction_type: TransactionType::Debit,
-                    };
-                    self.bank_account_controller
-                        .update(&recipient_account.id, &update_recipient_account)
+                    if let Ok(Some(recipient_account)) = maybe_recipient_account {
+                        let update_recipient_account = BankAccountUpdate {
+                            id: recipient_account.id,
+                            amount,
+                            transaction_type: TransactionType::Debit,
+                        };
+                        self.bank_account_controller
+                            .update(&recipient_account.id, &update_recipient_account)
+                            .await?;
+                        recipient_id = Some(recipient_account.id);
+                    }
+
+                    // Insert the transaction into the database
+                    let transaction = self
+                        .transaction_controller
+                        .create(&TransactionCreate::new(
+                            bank_account.id,
+                            recipient_id,
+                            amount,
+                            TransactionType::Credit,
+                            bank_account.nonce,
+                            iso_msg_raw,
+                        ))
                         .await?;
-                    recipient_id = Some(recipient_account.id);
+
+                    // set the transaction hash in the ISO message
+                    iso_msg.set_on(126, &transaction.hash)?;
+                    iso_msg.set_on(RESPONSE_CODE_FIELD_NUMBER, ResponseCodes::Approved.into())?;
                 }
-
-                // Insert the transaction into the database
-                let transaction = self
-                    .transaction_controller
-                    .create(&TransactionCreate::new(
-                        bank_account.id,
-                        recipient_id,
-                        amount,
-                        TransactionType::Credit,
-                        bank_account.nonce,
-                        iso_msg_raw,
-                    ))
-                    .await?;
-
-                // set the transaction hash in the ISO message
-                iso_msg.set_on(126, &transaction.hash)?;
-                iso_msg.set_on(RESPONSE_CODE_FIELD_NUMBER, ResponseCodes::Approved.into())?;
-            } else {
-                iso_msg.set_on(
-                    RESPONSE_CODE_FIELD_NUMBER,
-                    ResponseCodes::InvalidTransaction.into(),
-                )?;
+                Err(e) => {
+                    log::error!("Transaction failed: {:?}", e);
+                    iso_msg.set_on(
+                        RESPONSE_CODE_FIELD_NUMBER,
+                        ResponseCodes::InvalidTransaction.into(),
+                    )?;
+                }
             }
         } else {
             iso_msg.set_on(
@@ -313,7 +318,8 @@ impl Iso8583MessageProcessor {
 
         // validate the transaction timestamp
         // MMDDHHMMSS format, parse it
-        if !utils::validate_timestamp(transaction_timestamp) {
+        if !utils::validate_timestamp(transaction_timestamp.clone()) {
+            log::info!("Invalid timestamp: {:?}", transaction_timestamp);
             return Ok(ResponseCodes::InvalidTransaction);
         }
 

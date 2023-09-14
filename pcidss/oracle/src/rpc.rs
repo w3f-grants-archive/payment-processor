@@ -97,12 +97,19 @@ impl OracleApiServer<IsoMsg> for OracleApiImpl {
     async fn get_bank_account(&self, card_number: String) -> RpcResult<BankAccount> {
         log::debug!("Received get_bank_account request: {:?}", card_number);
 
-        self.processor
+        let ba = self
+            .processor
             .bank_account_controller
             .find_by_card_number(&card_number)
             .await
-            .map_err(|_| ErrorCode::InvalidParams)?
-            .ok_or(ErrorCode::InvalidParams.into())
+            .map_err(|e| {
+                log::debug!("Error: {:?}", e);
+                ErrorCode::InvalidParams
+            })?;
+
+        log::debug!("ba = {:?}", ba);
+
+        ba.ok_or(ErrorCode::InvalidParams.into())
     }
 }
 
@@ -156,13 +163,14 @@ pub async fn run(
             let bank_account = processor
                 .bank_account_controller
                 .create(&bank_account_create)
-                .await
-                .unwrap();
+                .await;
 
-            assert_eq!(bank_account.card_number, account.1);
-            assert_eq!(bank_account.balance, account.3);
-            assert_eq!(bank_account.nonce, 0);
-            info!("Inserted dev account: {:?}", bank_account);
+            if let Ok(bank_account) = bank_account {
+                assert_eq!(bank_account.card_number, account.1);
+                assert_eq!(bank_account.balance, account.3);
+                assert_eq!(bank_account.nonce, 0);
+                info!("Inserted dev account: {:?}", bank_account);
+            }
         }
     }
 
