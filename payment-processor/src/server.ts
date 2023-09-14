@@ -31,6 +31,11 @@ export default class Server {
   // Starts the server
   public async start() {
     await this.oracle_rpc.connect();
+    console.log(
+      "Connected to oracle at",
+      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+    );
+
     this.initRoutes();
 
     this.listen();
