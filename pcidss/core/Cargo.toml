@@ -1,0 +1,21 @@
+[package]
+name = "op-core"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+deadpool-postgres = { workspace = true }
+tokio-postgres = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+iso8583_rs = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+sha2 = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
+ctrlc = { workspace = true }
+refinery = { workspace = true }
+serde = { workspace = true }

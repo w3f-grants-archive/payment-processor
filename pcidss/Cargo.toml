@@ -1,0 +1,68 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "api",
+    "core",
+    "oracle",
+]
+
+[workspace.package]
+authors = ["Dastanbek Samatov <dastanbeksamatov@gmail.com>"]
+edition = "2021"
+
+[workspace.dependencies]
+
+# Local dependencies
+op-api = { path = "./api" }
+op-core = { path = "./core" }
+
+# ISO8583
+iso8583_rs = "0.1.10"
+
+# RPC
+jsonrpsee = { version = "0.20.0", features = ["server", "http-client", "ws-client", "macros", "client-ws-transport-native-tls"] }
+jsonrpsee-types = { version = "0.20.0" }
+
+# Async dependencies
+async-trait = "0.1.68"
+futures = "0.3.28"
+futures-lite = "^1.7"
+tokio = { version = "1", features = ["rt"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+async-std = "1.9.0"
+
+# Database
+deadpool-postgres = "0.10.5"
+tokio-postgres = { version = "0.7.8", features = [
+    "with-chrono-0_4",
+    "with-uuid-1",
+] }
+refinery = { version = "0.8", features = ["tokio-postgres"] }
+
+# Logging
+dotenv = "0.15.0"
+env_logger = "0.10.0"
+log = "0.4.18"
+tracing = "0.1.27"
+tracing-subscriber = { version = "0.3.3", features = ["env-filter"] }
+
+# Serialization
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.96"
+
+# Other
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1.4.0"
+thiserror = "1.0.40"
+uuid = { version = "1.3", features = ["v4", "serde"] }
+clap = { version = "4.4", features = ["cargo", "derive", "wrap_help"] }
+ctrlc = "3.1.4"
+
+# Hashing
+base16ct = "0.2.0"
+sha2 = "0.10.0"
+
+# Dev dependencies
+mockall = "0.11.3"

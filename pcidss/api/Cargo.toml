@@ -1,0 +1,13 @@
+[package]
+name = "op-api"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+deadpool-postgres = { workspace = true }
+tokio-postgres = { workspace = true }
+uuid = { workspace = true }
+op-core = { workspace = true }
+chrono = { workspace = true }
