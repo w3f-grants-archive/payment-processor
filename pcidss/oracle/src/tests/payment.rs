@@ -24,8 +24,8 @@ async fn test_payment() {
         Ok((_raw, msg)) => {
             assert_eq!(msg.bmp_child_value(39).unwrap(), "00");
             assert_eq!(msg.bmp_child_value(4).unwrap(), "000000000100");
-            assert_eq!(msg.bmp_child_value(126).unwrap(), "0".repeat(99));
-            assert_eq!(msg.bmp_child_value(127).unwrap(), "1".repeat(49));
+            // transaction hash is set
+            assert_ne!(msg.bmp_child_value(126).unwrap(), "0".repeat(99));
         }
         Err(e) => {
             panic!("Error: {}", e);

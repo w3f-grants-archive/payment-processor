@@ -8,11 +8,12 @@ It is part of the infrastracture for integrating ISO-8583 standard for Substrate
 
 #### Enpoints
 
-Simple has one POST endpoint `/pos` which receives metadata of a plastic card and a transaction amount from the client and sends it to the [Oracle Gateway](../pcidss/README.md) for further processing.
+- `/pos`: which receives metadata of a plastic card and a transaction amount from the client, forms ISO-8583 message and sends `AuthorizationRequest` to the [Oracle Gateway](../pcidss/README.md) for further processing.
+- `/reverse`: which receives a transaction id from the client, forms ISO-8583 message and sends `ReversalRequest` to the Oracle Gateway for further processing.
 
 #### PCIDSS Compliant Oracle
 
-It maintains a constant websocket connection to the oracle gateway RPC and sends the ISO-8583 messages to it. When oracle is done with processing the message, it sends the response back to the payment processor which then sends it back to the client.
+It maintains a constant websocket connection to the oracle gateway RPC and sends the ISO-8583 messages to it. When oracle is done with processing the message, it sends the response back to this server which then sends it back to the client.
 
 ### How to run
 
@@ -24,16 +25,7 @@ It is a simple Express.js API, so you need to have `node` and `yarn/npm` install
 yarn install
 
 # start the dev server
-yarn dev
+yarn run dev-server
 ```
 
 > **_NOTE:_** You can set `PORT`, `ORACLE_RPC_URL` and `NODE_ENV` environment variables according to your needs.
-
-
-### Testing
-
-Unit tests cover the endpoints. You can run them with:
-
-```bash
-yarn test
-```

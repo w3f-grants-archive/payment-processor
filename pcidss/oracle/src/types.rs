@@ -17,6 +17,7 @@ pub enum MTI {
     ReversalResponse,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<&str> for MTI {
     fn into(self) -> &'static str {
         match self {
@@ -62,6 +63,7 @@ pub enum ResponseCodes {
     ExpiredCard,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<&str> for ResponseCodes {
     fn into(self) -> &'static str {
         match self {

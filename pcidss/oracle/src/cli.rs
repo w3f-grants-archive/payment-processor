@@ -48,6 +48,7 @@ impl Cli {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<PostgresConfig> for Cli {
     fn into(self) -> PostgresConfig {
         PostgresConfig {

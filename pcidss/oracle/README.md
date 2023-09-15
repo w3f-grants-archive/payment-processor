@@ -16,13 +16,19 @@ Oracle service implements an RPC API for processing incoming ISO-8583 messages v
 To run the oracle:
 
 ```bash
-cargo run -p pcidss-oracle
+make run
+
+# OR
+
+cargo run --release -p pcidss-oracle -- --dev
 ```
 
 To build the binary for release and run it:
 
 ```bash
-cargo build -p pcidss-oracle -r
+make build
+# OR
+cargo build --release
 
 ./target/release/pcidss-oracle
 ```
@@ -49,31 +55,26 @@ Options:
           ISO-8583 specification file [default: spec.yaml]
       --rpc-port <RPC_PORT>
           RPC port [default: 3030]
+      --dev
+          Run in development mode (development accounts are injected)
   -h, --help
           Print help
 ```
 
 #### Testing
 
-Oracle service has unit tests for the ISO-8583 message processing logic. You can run them with:
+Oracle service has integration tests for the ISO-8583 message processing logic. You can run them with:
 
 ```bash
-cargo test -p pcidss-oracle
+make test
 ```
 
-#### Testing with payment processor
+#### Linting and formatting
 
-You can test the oracle service with the [payment processor](../payment-processor/README.md). For this, you will need to run this script that creates mock plastic cards.
-
-```bash
-make create-mock-cards
-```
-
-Then you can run the payment processor:
+Oracle service uses `rustfmt` and `clippy` for formatting and linting. You can run them with:
 
 ```bash
-cd ../payment-processor
-yarn run dev-server
+make lint
 ```
 
 ## Documentation

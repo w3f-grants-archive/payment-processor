@@ -110,7 +110,6 @@ mod prelude {
             .unwrap();
         msg.set_on(49, "997").unwrap();
         msg.set_on(126, &"0".repeat(99)).unwrap();
-        msg.set_on(127, &"1".repeat(49)).unwrap();
 
         msg
     }

@@ -51,7 +51,7 @@ impl Iso8583MessageProcessor {
 
                 // Create a new response message
                 let mut res_iso_msg = new_msg(
-                    &self.spec,
+                    self.spec,
                     self.spec.get_message_from_header(res_msg_type.into())?,
                 );
 
@@ -97,10 +97,7 @@ impl Iso8583MessageProcessor {
     ///
     /// Extracts necessary fields from the ISO message and performs authorization.
     async fn handle_authorization_request(&self, iso_msg: &mut IsoMsg) -> Result<(), DomainError> {
-        iso_msg.set(
-            &"message_type".to_string(),
-            MTI::AuthorizationResponse.into(),
-        )?;
+        iso_msg.set("message_type", MTI::AuthorizationResponse.into())?;
 
         // extract necessary fields from the ISO message
         let card_number = iso_msg.bmp_child_value(2)?;
@@ -198,7 +195,7 @@ impl Iso8583MessageProcessor {
     ///
     /// Extracts necessary fields from the ISO message and performs reversal.
     async fn handle_reversal_request(&self, iso_msg: &mut IsoMsg) -> Result<(), DomainError> {
-        iso_msg.set(&"message_type".to_string(), MTI::ReversalResponse.into())?;
+        iso_msg.set("message_type", MTI::ReversalResponse.into())?;
 
         // extract transaction hash from the ISO message
         // first 64 characters are the hash
@@ -206,7 +203,7 @@ impl Iso8583MessageProcessor {
 
         let (tx_hash, _) = private_data.split_at(64);
 
-        let validation_result = self.validate(&iso_msg).await?;
+        let validation_result = self.validate(iso_msg).await?;
 
         // early return if not approved
         if validation_result != ResponseCodes::Approved {
@@ -232,10 +229,11 @@ impl Iso8583MessageProcessor {
                 transaction_type: TransactionType::Debit,
             };
 
-            if let Ok(_) = self
+            if self
                 .bank_account_controller
                 .update(&transaction.from, &update_account)
                 .await
+                .is_ok()
             {
                 if let Some(beneficiary_id) = transaction.to {
                     let update_recipient_account = BankAccountUpdate {
@@ -302,10 +300,10 @@ impl Iso8583MessageProcessor {
     ) -> Result<ResponseCodes, DomainError> {
         // format is: "{}D{}C{}", card_number, exp_date, cvv
         let track_2_data = iso_msg.bmp_child_value(35)?;
-        let mut parts = track_2_data.split("D");
+        let mut parts = track_2_data.split('D');
         let _ = parts.next().unwrap_or("");
         let remainder = parts.next().unwrap_or("");
-        let mut parts = remainder.split("C");
+        let mut parts = remainder.split('C');
         let card_expiration = parts.next().unwrap_or("");
         let cvv = parts.next().unwrap();
 
@@ -340,7 +338,7 @@ impl Iso8583MessageProcessor {
             return Ok(ResponseCodes::InsufficientFunds);
         }
 
-        return Ok(ResponseCodes::Approved);
+        Ok(ResponseCodes::Approved)
     }
 }
 

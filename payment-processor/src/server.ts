@@ -66,13 +66,13 @@ export default class Server {
     });
 
     router.post("/pos", async (req: express.Request, res: express.Response) =>
-      this.doPayment(req, res)
+      this.submitIso8583(req, res)
     );
 
     router.post(
       "/reverse",
       async (req: express.Request, res: express.Response) => {
-        this.doReverse(req, res);
+        this.submitIso8583(req, res);
       }
     );
 
@@ -89,61 +89,14 @@ export default class Server {
   // 4. Send the message to the PCIDSS compliant oracle
   // 5. Wait for the response
   // 6. Send the response back to the client
-  private async doPayment(req: express.Request, res: express.Response) {
+  private async submitIso8583(req: express.Request, res: express.Response) {
     const data = this.formIsoData(req.body);
     const isopack = new iso8583(data, CUSTOM_FORMATS);
-
-    console.log(
-      "Full message",
-      isopack.getIsoJSON(isopack.getBufferMessage(), {
-        lenEncoding: "hex",
-        bitmapEncoding: "hex",
-        secondaryBitmap: true,
-      })
-    );
 
     try {
       let msgResponse = await this.oracle_rpc.send("pcidss_submit_iso8583", [
         // slicing the first two bytes, because they are the length of the message
         // RPC doesn't expect it
-        Array.from(isopack.getBufferMessage().slice(2)),
-      ]);
-
-      await this.processResponse(msgResponse, res);
-    } catch {
-      res.status(500).json({
-        status: false,
-        message: "Internal server error",
-      });
-    }
-  }
-
-  // Reversal implementation
-  //
-  // This function does the following:
-  //
-  // 1. Extract variables from the request
-  // 2. Do some validation
-  // 3. Form ISO-8583 message
-  // 4. Send the message to the PCIDSS compliant oracle
-  // 5. Wait for the response
-  // 6. Send the response back to the client
-  private async doReverse(req: express.Request, res: express.Response) {
-    const data = this.formIsoData(req.body);
-
-    const isopack = new iso8583(data, CUSTOM_FORMATS);
-
-    console.log(
-      "Full message",
-      isopack.getIsoJSON(isopack.getBufferMessage(), {
-        lenEncoding: "hex",
-        bitmapEncoding: "hex",
-        secondaryBitmap: true,
-      })
-    );
-
-    try {
-      let msgResponse = await this.oracle_rpc.send("pcidss_submit_iso8583", [
         Array.from(isopack.getBufferMessage().slice(2)),
       ]);
 
@@ -189,7 +142,6 @@ export default class Server {
     const isoNow = new Date();
     const now = isoNow.toISOString();
 
-    console.log("Body", body);
     // Format is `hhmmss`
     const timeDate = [
       now.slice(11, 13),

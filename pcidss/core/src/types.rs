@@ -9,6 +9,7 @@ pub enum TransactionType {
     Credit,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<u32> for TransactionType {
     fn into(self) -> u32 {
         match self {
