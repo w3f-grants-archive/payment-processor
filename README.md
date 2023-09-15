@@ -15,9 +15,9 @@ Some important notes about the project:
 
 Contains three key parts for ISO-8553 message processing:
 
-1. Demo merchant application
-2. Server application for processing requests from merchant application
-3. PCIDSS compliant gateway simulator
+1. [Demo merchant application](./interface/README.md)
+2. [Server application](./payment-processor/README.md) for processing requests from merchant application
+3. PCIDSS compliant [oracle](./pcidss/README.md)
 
 ### Demo Merchant Application
 
