@@ -1,6 +1,6 @@
 # ISO-8553 Infrastracture
 
-This repository contains the infrastructure for ISO-8553 implementation for Substrate based chains. It contains of parts that are responsible for processing ISO-8553 messages, maintaining offchain ledger. In the next milestone, integration with Substrate chain will be added.
+This repository contains the infrastructure for ISO-8553 implementation for Substrate based chains. It contains of parts that are responsible for processing ISO-8553 messages, maintaining offchain ledger. With these components, it will be possible to mock full cycle of ISO-8583 messages.
 
 ## Notes
 
