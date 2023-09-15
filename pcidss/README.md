@@ -2,9 +2,9 @@
 
 Workspace contains three crates:
 
-- `pcidss-oracle` - the oracle itself
-- `op-api` - Oracle Provider API
-- `op-core` - Common primitive core types and traits used by both oracle and API
+- `pcidss-oracle` - the [oracle](./oracle/README.md) itself
+- `op-api` - Oracle Provider [API](./api/README.md)
+- `op-core` - Common [primitive core types](./core/README.md) and traits used by both oracle and API
 
 Workspace is written in a decoupled way, so that it is possible to add more services in the future.
 
