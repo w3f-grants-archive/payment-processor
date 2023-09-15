@@ -9,7 +9,7 @@ RUN cargo build --release --locked -p pcidss-oracle
 FROM docker.io/debian:bullseye-slim
 
 COPY --from=builder /pcidss/target/release/pcidss-oracle /usr/bin
-
+COPY --from=builder /pcidss/spec.yaml /usr/bin
 RUN useradd -m -u 1000 -U -s /bin/sh -d /oracle oracle
 
 # Create entrypoint script

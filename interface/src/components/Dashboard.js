@@ -29,9 +29,9 @@ const Dashboard = ({ state }) => {
 
       setCurrentAccount(bankAccount);
       setTransactions(transactions);
+      setMutated(false);
     };
     fetchAccount();
-    setMutated(false);
   }, [mutated]);
 
   const onReverse = async (hash, amount) => {

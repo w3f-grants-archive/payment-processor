@@ -33,6 +33,23 @@ cargo build --release
 ./target/release/pcidss-oracle
 ```
 
+To build the Docker image:
+
+```bash
+make docker-build
+# OR
+docker build --platform linux/x86_64 -t pcidss-oracle .
+```
+
+To run the Docker image:
+
+```bash
+make docker-run
+# OR
+# NOTE: your Postgres database should be accessible via host.docker.internal
+docker run -p 0.0.0.0:3030:3030 --platform linux/x86_64 -it pcidss-oracle --database-host host.docker.internal --iso8583-spec /usr/bin/spec.yaml
+```
+
 #### CLI
 
 Oracle service accepts the following arguments (which can be seen by running `pcidss-oracle --help`):
@@ -65,8 +82,12 @@ Options:
 
 Oracle service has integration tests for the ISO-8583 message processing logic. You can run them with:
 
+> **_NOTE:_** Integration tests are run in parallel by default. This might cause issues with Postgres database, so we should run them in a single thread and one by one.
+
 ```bash
 make test
+# OR
+cargo test --test-threads=1
 ```
 
 #### Linting and formatting

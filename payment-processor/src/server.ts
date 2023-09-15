@@ -32,7 +32,7 @@ export default class Server {
     this.env = process.env.NODE_ENV || "development";
     this.port = process.env.PORT || 3000;
     this.oracle_rpc = new WsProvider(
-      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+      process.env.ORACLE_RPC_URL || "ws://0.0.0.0:3030"
     );
 
     this.initMiddlewares();
@@ -43,7 +43,7 @@ export default class Server {
     await this.oracle_rpc.connect();
     console.log(
       "Connected to oracle at",
-      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+      process.env.ORACLE_RPC_URL || "ws://0.0.0.0:3030"
     );
 
     this.initRoutes();

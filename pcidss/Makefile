@@ -15,3 +15,6 @@ lint:
 # Run in development mode
 run:
 	$ cargo run -p pcidss-oracle -r -- --dev
+
+build-docker:
+	$ docker build -t pcidss-oracle .
