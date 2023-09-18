@@ -20,7 +20,7 @@ make run
 
 # OR
 
-cargo run --release -p pcidss-oracle -- --dev
+RUST_LOG=info cargo run --release -p pcidss-oracle -- --dev
 ```
 
 To build the binary for release and run it:
@@ -30,7 +30,27 @@ make build
 # OR
 cargo build --release
 
-./target/release/pcidss-oracle
+
+RUST_LOG=info ./target/release/pcidss-oracle
+```
+
+#### Docker
+
+To build the Docker image:
+
+```bash
+make docker-build
+# OR
+docker build --platform linux/x86_64 -t pcidss-oracle ..
+```
+
+To run the Docker image:
+
+```bash
+make docker-run
+# OR
+# NOTE: your Postgres database should be accessible via host.docker.internal
+docker run -p 0.0.0.0:3030:3030 --platform linux/x86_64 -it pcidss-oracle --database-host host.docker.internal --iso8583-spec /usr/bin/spec.yaml
 ```
 
 #### CLI
@@ -61,13 +81,19 @@ Options:
           Print help
 ```
 
+> **_NOTE:_** Make sure you pass your local postgres configuration in case it differs from the default values (e.g. `pcidss-oracle --database-host localhost --database-port 5432 --database-user postgres --database-name postgres`). Otherwise, you won't be able to run the oracle.
+
 #### Testing
 
 Oracle service has integration tests for the ISO-8583 message processing logic. You can run them with:
 
 ```bash
 make test
+# OR
+cargo test -- --test-threads=1
 ```
+
+> **_NOTE:_** Integration tests are run in parallel by default. This might cause issues with Postgres database, so we should run them in a single thread and one by one.
 
 #### Linting and formatting
 

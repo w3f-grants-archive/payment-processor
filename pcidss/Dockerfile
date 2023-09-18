@@ -10,12 +10,15 @@ FROM docker.io/debian:bullseye-slim
 
 COPY --from=builder /pcidss/target/release/pcidss-oracle /usr/bin
 
+COPY --from=builder /pcidss/spec.yaml /usr/bin
+
 RUN useradd -m -u 1000 -U -s /bin/sh -d /oracle oracle
 
 # Create entrypoint script
 RUN echo '#!/bin/bash\nset -xeu\n/usr/bin/pcidss-oracle $@' > /usr/bin/entrypoint.sh && \
     chmod +x /usr/bin/entrypoint.sh
 
+ENV RUST_LOG=info
 # Switch to user oracle
 USER oracle
 
