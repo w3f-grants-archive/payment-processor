@@ -13,7 +13,11 @@ Oracle service implements an RPC API for processing incoming ISO-8583 messages v
 - Rust toolchain (tested with version 1.72.0)
 - Postgres database (tested with version 14.9)
 
-To run the oracle:
+OR
+
+- Docker and docker-compose
+
+To run the oracle locally:
 
 ```bash
 make run
@@ -34,7 +38,15 @@ cargo build --release
 RUST_LOG=info ./target/release/pcidss-oracle
 ```
 
-#### Docker
+#### Docker and docker-compose
+
+To start the oracle with the deployed Docker image and Postgres docker container:
+    
+```bash
+docker-compose up
+```
+
+If you want to build the Docker image locally, you will need to change Postgres settings to allow Docker container to connect to it (listened_addresses and trust authentication method).
 
 To build the Docker image:
 
