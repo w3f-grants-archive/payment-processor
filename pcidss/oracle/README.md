@@ -40,7 +40,7 @@ RUST_LOG=info ./target/release/pcidss-oracle
 
 #### Docker and docker-compose
 
-To start the oracle with the deployed Docker image and Postgres docker container:
+To start the oracle with the deployed Docker image and Postgres Docker container:
     
 ```bash
 docker-compose up
