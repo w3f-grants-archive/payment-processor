@@ -37,9 +37,7 @@ services:
       - postgres
 
   interface:
-    build:
-      context: ./interface
-      dockerfile: Dockerfile
+    image: kingleard/merchant-demo:latest
     ports:
       - 3001:3001
     environment:
@@ -49,9 +47,7 @@ services:
       - server
 
   server:
-    build:
-      context: ./payment-processor
-      dockerfile: Dockerfile
+    image: kingleard/payment-processor:latest
     environment:
       - ORACLE_RPC_URL=ws://oracle:3030
     ports:

@@ -11,10 +11,10 @@ For demonstration purposes, `docker-compose` configuration is provided. It will 
 - PCIDSS compliant [oracle](./pcidss/README.md)
 - Postgres database
 
-To start the demo, first build the local images:
+To start the demo, first pull the images:
 
 ```bash
-docker-compose build
+docker-compose pull
 ```
 
 Then start the services:
@@ -27,7 +27,7 @@ You will be able to access the demo merchant application at `http://localhost:30
 
 ## Demo flow
 
-Documentation of [merchant application](./interface/README.md) contains the details about the demo flow.
+Documentation of [merchant application](./interface/README.md) contains the details about the demo flow. Note that, sometimes websocket connection with frontend is lost, so you might need to refresh the page.
 
 ## Notes
 
