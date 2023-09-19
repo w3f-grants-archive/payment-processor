@@ -189,7 +189,7 @@ async fn run_server(
     rpc_port: u16,
 ) -> anyhow::Result<SocketAddr> {
     let server = Server::builder()
-        .build(format!("127.0.0.1:{}", rpc_port))
+        .build(format!("0.0.0.0:{}", rpc_port))
         .await?;
 
     let addr = server.local_addr()?;

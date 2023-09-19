@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import React, { useEffect, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import toast, { Toaster } from "react-hot-toast";
@@ -24,9 +26,6 @@ const Dashboard = ({ state }) => {
         [currentAccount.card_number]
       );
 
-      console.log("bankAccount", bankAccount);
-      console.log("transactions", transactions);
-
       setCurrentAccount(bankAccount);
       setTransactions(transactions);
     };
@@ -34,8 +33,10 @@ const Dashboard = ({ state }) => {
     setMutated(false);
   }, [mutated]);
 
+  const DEV_MODE = process.env.MODE === "dev";
+
   const onReverse = async (hash, amount) => {
-    fetch("/reverse", {
+    fetch(`${DEV_MODE ? "" : "http://0.0.0.0:3000"}/reverse`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

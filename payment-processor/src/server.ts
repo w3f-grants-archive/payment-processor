@@ -25,14 +25,15 @@ export default class Server {
   public app: express.Application;
   public oracle_rpc: WsProvider;
   public env: string;
-  public port: string | number;
+  public port: number;
 
   constructor() {
     this.app = express();
     this.env = process.env.NODE_ENV || "development";
-    this.port = process.env.PORT || 3000;
+    this.port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
     this.oracle_rpc = new WsProvider(
-      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+      process.env.ORACLE_RPC_URL || "ws://0.0.0.0:3030",
+      1000
     );
 
     this.initMiddlewares();
@@ -40,10 +41,12 @@ export default class Server {
 
   // Starts the server
   public async start() {
-    await this.oracle_rpc.connect();
+    try {
+      await this.oracle_rpc.connect();
+    } catch (_) {}
     console.log(
       "Connected to oracle at",
-      process.env.ORACLE_RPC_URL || "ws://127.0.0.1:3030"
+      process.env.ORACLE_RPC_URL || "ws://0.0.0.0:3030"
     );
 
     this.initRoutes();
@@ -52,7 +55,7 @@ export default class Server {
   }
 
   public listen() {
-    this.app.listen(this.port, () => {
+    this.app.listen(this.port, "0.0.0.0", () => {
       console.log(`Server listening on port ${this.port}`);
     });
   }
@@ -156,6 +159,7 @@ export default class Server {
 
     let isReversal = txHash !== null;
 
+    console.log("cardExpiration, ", cardExpiration);
     // Format is `MMDDhhmmss`
     const transmissionDate = `${monthDay}${timeDate}`;
 
@@ -191,7 +195,13 @@ export default class Server {
         },
       })
     );
-    this.app.use(cors());
+    this.app.use(
+      cors({
+        origin: ["http://0.0.0.0:3001", "http://localhost:3001"],
+        preflightContinue: true,
+        credentials: false,
+      })
+    );
     this.app.use(helmet());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));

@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   postgres:
     image: postgres:14.9-alpine
@@ -25,12 +26,37 @@ services:
         condition: service_healthy
     ports:
       - 3030:3030
+    environment:
+      - RUST_LOG=debug
     platform: linux/x86_64
     command:
       - --iso8583-spec=/usr/bin/spec.yaml
       - --database-host=postgres
+      - --dev
     links:
       - postgres
+
+  interface:
+    image: kingleard/merchant-demo:latest
+    ports:
+      - 3001:3001
+    environment:
+      - GENERATE_SOURCEMAP=false
+    depends_on:
+      - oracle
+      - server
+
+  server:
+    image: kingleard/payment-processor:latest
+    environment:
+      - ORACLE_RPC_URL=ws://oracle:3030
+    ports:
+      - 3000:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      oracle:
+        condition: service_started
 
 volumes:
   postgres-data:

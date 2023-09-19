@@ -12,7 +12,7 @@ function App() {
   let [isConnected, setIsConnected] = useState(false);
 
   const loadWs = async () => {
-    const ws = new WsProvider("ws://127.0.0.1:3030");
+    const ws = new WsProvider("ws://0.0.0.0:3030");
     await ws.connect();
     setOracleRpc(ws);
   };
