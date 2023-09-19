@@ -57,7 +57,7 @@ const Checkout = () => {
     // TODO: Call your backend to create the Checkout session.
     console.log("cardDetails", cardDetails);
 
-    fetch("/pos/", {
+    fetch(`${process.env.MODE === "dev" ? "" : "http://0.0.0.0:3000"}/pos/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

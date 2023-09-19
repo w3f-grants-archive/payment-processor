@@ -2,6 +2,33 @@
 
 This repository contains the infrastructure for ISO-8553 implementation for Substrate based chains. It contains of parts that are responsible for processing ISO-8553 messages, maintaining offchain ledger. With these components, it will be possible to mock full cycle of ISO-8583 messages.
 
+## Run the demo
+
+For demonstration purposes, `docker-compose` configuration is provided. It will start the following services:
+
+- [Demo merchant application](./interface/README.md)
+- [Payment Processor Server](./payment-processor/README.md)
+- PCIDSS compliant [oracle](./pcidss/README.md)
+- Postgres database
+
+To start the demo, first build the local images:
+
+```bash
+docker-compose build
+```
+
+Then start the services:
+
+```bash
+docker-compose up
+```
+
+You will be able to access the demo merchant application at `http://localhost:3001`.
+
+## Demo flow
+
+Documentation of [merchant application](./interface/README.md) contains the details about the demo flow.
+
 ## Notes
 
 Some important notes about the project:
