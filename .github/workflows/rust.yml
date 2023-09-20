@@ -26,6 +26,8 @@ jobs:
         # POSTGRES_PASSWORD - superuser password
         postgresql password: postgres
     - name: Build
+      working-directory: ./pcidss
       run: cargo build --verbose
     - name: Run tests
+      working-directory: ./pcidss
       run: cargo test --verbose
