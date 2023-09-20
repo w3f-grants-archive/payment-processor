@@ -6,7 +6,7 @@ build:
 
 # Run tests
 test:
-	$ cargo test -- --test-threads=1
+	$ cargo test
 
 # Run lints and format checks
 lint:

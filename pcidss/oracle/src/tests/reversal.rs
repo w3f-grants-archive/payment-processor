@@ -8,7 +8,7 @@ use crate::{
 /// Tests payment reversal
 #[tokio::test]
 async fn test_reversals_success() {
-    let api = MockProcessorImpl::new().await;
+    let api = MockProcessorImpl::new(Some("testdb".to_string())).await;
 
     // make a basic transaction payment from Alice
     let spec = api.processor.spec.clone();

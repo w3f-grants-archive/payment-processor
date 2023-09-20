@@ -9,7 +9,7 @@ use crate::{
 /// Tests basic payment authorization and its settlement
 #[tokio::test]
 async fn test_payment() {
-    let api = MockProcessorImpl::new().await;
+    let api = MockProcessorImpl::new(None).await;
 
     let spec = api.processor.spec.clone();
 

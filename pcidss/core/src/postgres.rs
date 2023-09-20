@@ -75,7 +75,7 @@ pub async fn run_migrations(postgres_config: Config) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-pub async fn mock_init() -> Result<Pool, DomainError> {
+pub async fn mock_init(db_name: String) -> Result<Pool, DomainError> {
     use std::env;
 
     // This config is used for tests
@@ -83,7 +83,7 @@ pub async fn mock_init() -> Result<Pool, DomainError> {
         host: env::var("POSTGRES_HOST").unwrap_or("localhost".to_string()),
         user: env::var("POSTGRES_USER").unwrap_or("postgres".to_string()),
         password: env::var("POSTGRES_PASSWORD").unwrap_or("postgres".to_string()),
-        name: env::var("POSTGRES_DB_NAME").unwrap_or("mockdb".to_string()),
+        name: env::var("POSTGRES_DB_NAME").unwrap_or(db_name),
         pool_max: 100,
     };
 

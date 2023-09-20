@@ -21,8 +21,10 @@ pub struct MockProcessorImpl {
 
 impl MockProcessorImpl {
     /// Creates a new instance of the mock processor
-    pub async fn new() -> Self {
-        let pg_pool = mock_init().await.expect("Error to init database to tests");
+    pub async fn new(db_name: Option<String>) -> Self {
+        let pg_pool = mock_init(db_name.unwrap_or("mockdb".to_string()))
+            .await
+            .expect("Error to init database to tests");
         let pg_pool = Arc::new(pg_pool);
 
         let bank_account_trait: Arc<dyn BankAccountTrait> =

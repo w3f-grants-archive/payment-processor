@@ -102,7 +102,7 @@ Oracle service has integration tests for the ISO-8583 message processing logic. 
 ```bash
 make test
 # OR
-cargo test -- --test-threads=1
+cargo test
 ```
 
 > **_NOTE:_** Integration tests are run in parallel by default. This might cause issues with Postgres database, so we should run them in a single thread and one by one.
