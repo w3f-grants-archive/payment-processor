@@ -1,24 +1,5 @@
 # Demo for M2
 
-## Run the node
-
-To run the node, you need to have the following dependencies installed:
-
-```bash
-docker run -it -p 9944:9944 kingleard/iso8583-chain --dev --tmp --unsafe-rpc-external --rpc-cors=all --rpc-methods=unsafe -loffchain-worker
-```
-
-Insert the offchain worker key to substrate node:
-
-```bash
-curl -H "Content-Type: application/json" \
- --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["'"iso8"'", "'"news slush supreme milk chapter athlete soap sausage put clutch what kitten"'", "'"0xd2bf4b844dfefd6772a8843e669f943408966a977e3ae2af1dd78e0f55f4df67"'"],"id":1 }' \
-"http://0.0.0.0:9944"
-```
-
-Then, you can access the explorer [here](https://polkadot.js.org/apps/?rpc=ws://0.0.0.0:9944#/explorer).
-
-## Run the infrastracture
 
 For demonstration purposes, `docker-compose` configuration is provided. It will start the following services:
 
@@ -41,6 +22,22 @@ docker-compose up
 
 You will be able to access the demo merchant application at `http://localhost:3002`.
 
+Insert the offchain worker key to substrate node:
+
+```bash
+curl -H "Content-Type: application/json" \
+ --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["'"iso8"'", "'"news slush supreme milk chapter athlete soap sausage put clutch what kitten"'", "'"0xd2bf4b844dfefd6772a8843e669f943408966a977e3ae2af1dd78e0f55f4df67"'"],"id":1 }' \
+"http://0.0.0.0:9944"
+```
+
+Then, you can access the explorer [here](https://polkadot.js.org/apps/?rpc=ws://0.0.0.0:9944#/explorer).
+
+
+NOTE: 
+- URL of the payment processor API is stored under `ISO8583::PaymentProcessorUrl` in the chain storage. It is set to `http://sever:3001` by default, but you can change it to `http://localhost:3001` if you are running the services locally (`sudo` wrapped `setPaymentProcessorUrl` extrinsic is provided for that purpose).
+- To start from scratch, stop `docker-compose` and delete `postgres-data` folder. Then start the services again.
+- If you want to add new bank accounts, add it to `DEV_ACCOUNTS` in `pcidss/oracle/src/types.rs` and restart the services (or just the oracle).
+
 ## Milestone Goals
 
 1. On-chain addresses can be associated with bank accounts
@@ -52,16 +49,6 @@ You will be able to access the demo merchant application at `http://localhost:30
 ## Demo flow
 
 Demo of on-chain extrinsics and their interaction with the oracle gateway is documented [here](https://github.com/subclone/iso8583-chain/blob/main/DEMO.md). This demo is aimed at showing the user facing side of the infrastracture, and in general the end product of all components.
-
-### Prerequisites
-
-First and foremost, insert the offchain worker key to substrate node, in case you didn't yet:
-
-```bash
-curl -H "Content-Type: application/json" \
- --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["'"iso8"'", "'"news slush supreme milk chapter athlete soap sausage put clutch what kitten"'", "'"0xd2bf4b844dfefd6772a8843e669f943408966a977e3ae2af1dd78e0f55f4df67"'"],"id":1 }' \
-"http://localhost:9944"
-```
 
 #### Accounts and their roles
 

@@ -18,6 +18,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  substrate_node:
+    image: iso8583-chain
+    platform: linux/x86_64
+    ports:
+      - 9944:9944
+    command:
+      - --dev
+      - --tmp
+      - --unsafe-rpc-external
+      - --rpc-methods=unsafe
+      - --rpc-cors=all
+      - -loffchain-worker
+
   oracle:
     build: ./pcidss
     depends_on:
@@ -32,10 +45,11 @@ services:
       - --iso8583-spec=/usr/bin/spec.yaml
       - --database-host=postgres
       - --database-port=5433
-      - --ws-url=ws://host.docker.internal:9944
+      - --ws-url=ws://substrate_node:9944
       - --dev
     links:
       - postgres
+      - substrate_node
 
   interface:
     build: ./interface
