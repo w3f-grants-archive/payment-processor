@@ -63,17 +63,18 @@ JSON-RPC based message consumer that maintains offchain ledger and a processor f
 
 ```bash
 # Run check
-cargo check --features runtime-benchmarks
-# Run all tests: unit tests, integration tests, and doc tests
-cargo test --workspace --all-features
+cargo check --all-features
+# Run all tests: unit, semi-integration and doc tests
+cargo test --workspace --all-features --exclude oracle-e2e-tests
 # Run clippy
 cargo clippy --workspace --all-targets --all-features
 # Run fmt
 cargo +nightly fmt --all --check
 # Run code coverage
-cargo tarpaulin --workspace --all-features
+cargo tarpaulin --workspace --all-features --exclude oracle-e2e-tests
 ```
 
+For running `e2e-tests`, please, refer to `e2e-tests` [README](./pcidss/e2e-tests/README.md).
 
 ## References
 
