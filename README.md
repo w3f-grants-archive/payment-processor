@@ -59,6 +59,22 @@ NodeJs server that is responsible for processing requests from merchant applicat
 
 JSON-RPC based message consumer that maintains offchain ledger and a processor for ISO-8553 messages. It also has a watcher services that is subscribed to Substrate chain to look for intents and also settle finality of off-chain ledger transactions.
 
+## Tests, clippy, fmt and coverage
+
+```bash
+# Run check
+cargo check --features runtime-benchmarks
+# Run all tests: unit tests, integration tests, and doc tests
+cargo test --workspace --all-features
+# Run clippy
+cargo clippy --workspace --all-targets --all-features
+# Run fmt
+cargo +nightly fmt --all --check
+# Run code coverage
+cargo tarpaulin --workspace --all-features
+```
+
+
 ## References
 
 - [ISO-8583 Research](https://github.com/adit313/ISO8583-Blockchain-Integration-Plan) by Adit Patel
