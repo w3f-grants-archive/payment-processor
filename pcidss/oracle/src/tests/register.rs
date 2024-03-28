@@ -27,7 +27,7 @@ async fn test_register() {
 	// Assert processing results
 	assert_eq!(msg.bmp_child_value(39).unwrap(), "00");
 
-	let alice_account = get_bank_account_by_card_number(&api, &ALICE.1).await;
+	let alice_account = get_bank_account_by_card_number(&api, ALICE.1).await;
 
 	assert_eq!(alice_account.account_id, Some(account_id_hex.trim_start_matches("0x").to_string()));
 
@@ -45,7 +45,7 @@ async fn test_register() {
 	// Assert processing results
 	assert_eq!(msg.bmp_child_value(39).unwrap(), "12");
 
-	let charlie_account = get_bank_account_by_card_number(&api, &CHARLIE.1).await;
+	let charlie_account = get_bank_account_by_card_number(&api, CHARLIE.1).await;
 
 	assert_eq!(
 		charlie_account.account_id,

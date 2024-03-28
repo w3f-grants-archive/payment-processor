@@ -12,7 +12,7 @@ async fn test_reversals_success() {
 	// make a basic transaction payment from Alice
 	let spec = api.processor.spec;
 
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, ALICE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, ALICE);
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 
 	let mut msg_raw = new_msg.assemble().unwrap();
@@ -20,7 +20,7 @@ async fn test_reversals_success() {
 
 	assert_eq!(msg.bmp_child_value(39).unwrap(), "00");
 
-	let alice_account = get_bank_account_by_card_number(&api, &ALICE.1).await;
+	let alice_account = get_bank_account_by_card_number(&api, ALICE.1).await;
 	let alice_txs = get_transactions_by_id(&api, &alice_account.id).await;
 
 	let alice_tx = &alice_txs[0];
@@ -29,7 +29,7 @@ async fn test_reversals_success() {
 	assert_eq!(alice_tx.amount, 100);
 
 	// make a reversal transaction from Alice
-	let mut reversal_new_msg = get_new_iso_msg(&spec, MTI::ReversalRequest, ALICE);
+	let mut reversal_new_msg = get_new_iso_msg(spec, MTI::ReversalRequest, ALICE);
 
 	// set tx hash on 126
 	reversal_new_msg.set_on(4, "00000000000000000100").unwrap();
@@ -43,8 +43,8 @@ async fn test_reversals_success() {
 	assert_eq!(msg.bmp_child_value(4).unwrap(), "00000000000000000100");
 
 	// get alice account again
-	let alice_account = get_bank_account_by_card_number(&api, &ALICE.1).await;
-	let acquirer_account = get_bank_account_by_card_number(&api, &ACQUIRER.1).await;
+	let alice_account = get_bank_account_by_card_number(&api, ALICE.1).await;
+	let acquirer_account = get_bank_account_by_card_number(&api, ACQUIRER.1).await;
 
 	// balances should be the same as before
 	assert_eq!(alice_account.balance, ALICE.3);
@@ -55,17 +55,17 @@ async fn test_reversals_success() {
 
 	// tx len unchanged, but tx is flagged as reversed now
 	assert_eq!(alice_txs.len(), 1);
-	assert_eq!(alice_txs[0].reversed, true);
+	assert!(alice_txs[0].reversed);
 
 	// VALIDATION TESTS
 	// Try to reverse a transaction that doesn't exist
-	let mut new_msg = get_new_iso_msg(&spec, MTI::ReversalRequest, CHARLIE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::ReversalRequest, CHARLIE);
 
 	// set tx hash on 126
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 	new_msg.set_on(126, &"0".repeat(64)).unwrap();
 
-	let charlie_account = get_bank_account_by_card_number(&api, &CHARLIE.1).await;
+	let charlie_account = get_bank_account_by_card_number(&api, CHARLIE.1).await;
 	let charlie_txs = get_transactions_by_id(&api, &charlie_account.id).await;
 
 	assert_noop(

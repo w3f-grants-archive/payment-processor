@@ -126,8 +126,8 @@ impl BankAccount {
 		match bank_account_update {
 			BankAccountUpdate::Balance { amount, transaction_type } => {
 				self.balance = match transaction_type {
-					TransactionType::Debit => self.balance.checked_add(amount.clone()),
-					TransactionType::Credit => self.balance.checked_sub(amount.clone()),
+					TransactionType::Debit => self.balance.checked_add(*amount),
+					TransactionType::Credit => self.balance.checked_sub(*amount),
 				}
 				.ok_or(DomainError::ApiError(String::from("Arithmetic underflow/overflow")))?;
 

@@ -282,7 +282,7 @@ impl Iso8583MessageProcessor {
 
 		// revert if accoun_id is already registered
 		if let Ok(Some(_bank_account)) =
-			self.bank_account_controller.find_by_account_id(&account_id).await
+			self.bank_account_controller.find_by_account_id(account_id).await
 		{
 			iso_msg.set_on(RESPONSE_CODE_FIELD_NUMBER, ResponseCodes::DoNotHonor.into())?;
 			return Ok(());

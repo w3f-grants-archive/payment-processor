@@ -19,7 +19,7 @@ use iso_8583_chain::{
 	},
 };
 use op_core::bank_account::models::BankAccount;
-use std::{str::FromStr, sync::Arc};
+use std::{fmt::Write, str::FromStr, sync::Arc};
 use subxt::{
 	config::substrate::H256, events::EventDetails, utils::AccountId32, OnlineClient,
 	SubstrateConfig,
@@ -102,7 +102,7 @@ impl WatcherService {
 					// spread struct properties into variables
 					let InitiateTransfer { from, to, amount } = decoded_event;
 
-					Self::process_transfer(&self, from, to, amount, &event_id).await?
+					Self::process_transfer(self, from, to, amount, &event_id).await?
 				},
 				x if x.contains("InitiateRevert") => {
 					let decoded_event =
@@ -110,7 +110,7 @@ impl WatcherService {
 
 					let InitiateRevert { who, hash } = decoded_event;
 
-					Self::process_revert(&self, who, hash, &event_id).await?
+					Self::process_revert(self, who, hash, &event_id).await?
 				},
 				_ => (),
 			}
@@ -161,12 +161,12 @@ impl WatcherService {
 			&format!(
 				"{}D{}C{}",
 				from.card_number,
-				from.card_expiration_date.format("%m%y").to_string(),
+				from.card_expiration_date.format("%m%y"),
 				from.card_cvv
 			),
 		)?;
 
-		msg.set_on(127, &event_id)?;
+		msg.set_on(127, event_id)?;
 
 		if let Some(hash) = hash {
 			msg.set_on(126, hash)?;
@@ -192,8 +192,8 @@ impl WatcherService {
 		let (from_hex, to_hex) = (hex::encode(from.0), hex::encode(to.0));
 
 		let (from_bank_account, to_bank_account) = futures::join!(
-			self.processor.bank_account_controller.find_by_account_id(&from_hex.as_str()),
-			self.processor.bank_account_controller.find_by_account_id(&to_hex.as_str())
+			self.processor.bank_account_controller.find_by_account_id(from_hex.as_str()),
+			self.processor.bank_account_controller.find_by_account_id(to_hex.as_str())
 		);
 
 		let from_bank_account = from_bank_account?.ok_or("From bank account not found")?;
@@ -220,14 +220,14 @@ impl WatcherService {
 				Some(&to_bank_account),
 				None,
 				offchain_amount,
-				&event_id,
+				event_id,
 			)
 			.map_err(|_| "Could not compose ISO8583 message")?;
 
 		let (_, iso_msg) = self.processor.process(&mut iso_msg_raw).await?;
 
 		// submit finality
-		self.submit_finality(from, to, amount, iso_msg, &event_id).await
+		self.submit_finality(from, to, amount, iso_msg, event_id).await
 	}
 
 	/// Process a revert event
@@ -238,15 +238,21 @@ impl WatcherService {
 		event_id: &str,
 	) -> anyhow::Result<(), Box<dyn std::error::Error>> {
 		let (who_hex, hash_hex): (String, String) = (
-			from.0.iter().map(|b| format!("{:02x}", b)).collect(),
-			hash.0.iter().map(|b| format!("{:02x}", b)).collect(),
+			from.0.iter().fold(String::new(), |mut output, b| {
+				let _ = write!(output, "{b:02X}");
+				output
+			}),
+			hash.0.iter().fold(String::new(), |mut output, b| {
+				let _ = write!(output, "{b:02X}");
+				output
+			}),
 		);
 
 		log::debug!("Reverting transaction from: {}, hash: {}", who_hex, hash_hex);
 
 		let (from_bank_account, maybe_transaction) = futures::join!(
-			self.processor.bank_account_controller.find_by_account_id(&who_hex.as_str()),
-			self.processor.transaction_controller.find_by_hash(&hash_hex.as_str())
+			self.processor.bank_account_controller.find_by_account_id(who_hex.as_str()),
+			self.processor.transaction_controller.find_by_hash(hash_hex.as_str())
 		);
 
 		let from_bank_account = from_bank_account?.ok_or("From bank account not found")?;
@@ -261,7 +267,7 @@ impl WatcherService {
 		}
 
 		let mut iso_msg_raw = self
-			.compose_iso_msg(&from_bank_account, None, Some(&hash_hex), 0, &event_id)
+			.compose_iso_msg(&from_bank_account, None, Some(&hash_hex), 0, event_id)
 			.map_err(|_| "Could not compose ISO8583 message")?;
 
 		let (_, iso_msg) = self.processor.process(&mut iso_msg_raw).await?;
@@ -278,7 +284,7 @@ impl WatcherService {
 			from,
 			transaction.amount as u128 * 1_000_000,
 			iso_msg,
-			&event_id,
+			event_id,
 		)
 		.await
 	}

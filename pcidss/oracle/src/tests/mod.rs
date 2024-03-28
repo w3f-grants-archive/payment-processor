@@ -61,7 +61,7 @@ mod prelude {
 
 		msg.set("message_type", mti.into()).unwrap();
 
-		msg.set_on(2, &card_number).unwrap();
+		msg.set_on(2, card_number).unwrap();
 		// processing code
 		msg.set_on(3, "000000").unwrap();
 
@@ -108,7 +108,7 @@ mod prelude {
 
 		assert_eq!(&msg_response.1.bmp_child_value(39).unwrap(), Into::<&str>::into(response_code),);
 
-		let beneficiary_account = get_bank_account_by_card_number(api, &beneficiary.1).await;
+		let beneficiary_account = get_bank_account_by_card_number(api, beneficiary.1).await;
 
 		assert_eq!(beneficiary_account.balance, previous_account_state.balance);
 

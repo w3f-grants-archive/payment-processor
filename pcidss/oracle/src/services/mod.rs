@@ -48,7 +48,7 @@ pub async fn start_oracle(args: &Cli, pg_pool: Arc<Pool>) -> anyhow::Result<()> 
 
 	let seed = SecretUri::from_str(&args.seed).unwrap();
 	let keypair = Keypair::from_uri(&seed).map_err(|_| "Invalid seed phrase").unwrap();
-	log::info!("Using keypair: {:?}", hex::encode(&keypair.public_key()));
+	log::info!("Using keypair: {:?}", hex::encode(keypair.public_key()));
 
 	// spawn the RPC server
 	tokio::spawn({

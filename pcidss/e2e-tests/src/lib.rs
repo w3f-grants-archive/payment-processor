@@ -1,6 +1,6 @@
 //! End-to-end tests for PCIDSS oracle and client.
-
 #![cfg(test)]
+#![allow(clippy::needless_borrows_for_generic_args)]
 
 use jsonrpsee::core::client::ClientT;
 use op_core::bank_account::models::BankAccount;
@@ -9,7 +9,6 @@ use subxt::{config::substrate::H256, utils::AccountId32, OnlineClient, Substrate
 
 const SEED: &str = "intact start solar kind young network dizzy churn crisp custom fuel fabric";
 const CHARLIE: &str = "90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22";
-const DAVE: &str = "306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20";
 
 type Oracle = jsonrpsee::ws_client::WsClient;
 type Substrate = OnlineClient<SubstrateConfig>;
@@ -86,7 +85,7 @@ async fn test_full_lifecycle() {
 	let transfer = iso_8583_chain::tx().iso8583().initiate_transfer(
 		AccountId32(env.keypair.public_key().0),
 		AccountId32(charlie.try_into().expect("ok")),
-		1_000_0000u128.into(),
+		10_000_000_u128,
 	);
 
 	let result = env.substrate.tx().sign_and_submit_default(&transfer, &env.keypair).await;
@@ -122,7 +121,7 @@ async fn test_full_lifecycle() {
 	println!("on_chain_account.data.free: {:?}", on_chain_account.data.free);
 	assert_eq!(
 		on_chain_account.data.free as u32,
-		format_balance(initial_bank_account.balance) - 1_000_0000u128 as u32
+		format_balance(initial_bank_account.balance) - 10_000_000_u128 as u32
 	);
 
 	// get list of transactions

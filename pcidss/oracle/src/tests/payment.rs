@@ -12,7 +12,7 @@ async fn test_payment() {
 
 	let spec = api.processor.spec;
 
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, ALICE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, ALICE);
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 
 	let mut msg_raw = new_msg.assemble().unwrap();
@@ -23,7 +23,7 @@ async fn test_payment() {
 	// transaction hash is set
 	assert_ne!(msg.bmp_child_value(126).unwrap(), "0".repeat(99));
 
-	let alice_account = get_bank_account_by_card_number(&api, &ALICE.1).await;
+	let alice_account = get_bank_account_by_card_number(&api, ALICE.1).await;
 	let alice_txs = get_transactions_by_id(&api, &alice_account.id).await;
 
 	assert_eq!(alice_txs.len(), 1);
@@ -36,7 +36,7 @@ async fn test_payment() {
 
 	// INSUFFICIENT FUNDS
 	// Make sure alice can't spend more than she has
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, ALICE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, ALICE);
 	new_msg.set_on(4, "00000000000000001100").unwrap();
 
 	assert_noop(
@@ -51,16 +51,16 @@ async fn test_payment() {
 
 	// EXPIRED CARD
 	// Make sure Eve can't spend anything
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, EVE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, EVE);
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 
-	let eve_account = get_bank_account_by_card_number(&api, &EVE.1).await;
+	let eve_account = get_bank_account_by_card_number(&api, EVE.1).await;
 
 	assert_noop(&api, EVE, &new_msg, ResponseCodes::ExpiredCard, eve_account.clone(), vec![]).await;
 
 	// INVALID CARD NUMBER
 	// Make sure any msg with invalid card number is rejected
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, ALICE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, ALICE);
 	new_msg.set_on(2, "1234567890123456").unwrap();
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 
@@ -77,11 +77,11 @@ async fn test_payment() {
 	// INVALID TRANSACTION
 	// Make sure any msg with invalid transaction is rejected
 	// This is triggered when timestamp is not within 30 seconds of now
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, CHARLIE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, CHARLIE);
 	new_msg.set_on(7, "1109010101").unwrap();
 	new_msg.set_on(4, "00000000000000000100").unwrap();
 
-	let charlie_account = get_bank_account_by_card_number(&api, &CHARLIE.1).await;
+	let charlie_account = get_bank_account_by_card_number(&api, CHARLIE.1).await;
 
 	assert_noop(
 		&api,
@@ -95,14 +95,14 @@ async fn test_payment() {
 
 	// DO NOT HONOR
 	// Can be caused by wrong cvv
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, ALICE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, ALICE);
 	new_msg
 		.set_on(
 			35,
 			&format!(
 				"{}D{}C{}",
 				ALICE.1,
-				alice_account.card_expiration_date.format("%m%y").to_string(),
+				alice_account.card_expiration_date.format("%m%y"),
 				"999" // correct cvv is 123
 			),
 		)
@@ -120,7 +120,7 @@ async fn test_payment() {
 	.await;
 
 	// And now finally, DAVE makes big payment
-	let mut new_msg = get_new_iso_msg(&spec, MTI::AuthorizationRequest, DAVE);
+	let mut new_msg = get_new_iso_msg(spec, MTI::AuthorizationRequest, DAVE);
 	new_msg.set_on(4, "00000000000000100000").unwrap();
 
 	let mut msg_raw = new_msg.assemble().unwrap();
@@ -129,7 +129,7 @@ async fn test_payment() {
 	assert_eq!(msg.bmp_child_value(39).unwrap(), "00");
 	assert_eq!(msg.bmp_child_value(4).unwrap(), "00000000000000100000");
 
-	let dave_account = get_bank_account_by_card_number(&api, &DAVE.1).await;
+	let dave_account = get_bank_account_by_card_number(&api, DAVE.1).await;
 
 	assert_eq!(dave_account.balance, DAVE.3 - 100_000);
 
@@ -146,7 +146,7 @@ async fn test_payment() {
 	assert_eq!(dave_tx.amount, 100_000);
 
 	// Settlement is `on-us` since merchant is hard coded as `ACQUIRER`
-	let acquirer = get_bank_account_by_card_number(&api, &ACQUIRER.1).await;
+	let acquirer = get_bank_account_by_card_number(&api, ACQUIRER.1).await;
 
 	assert_eq!(acquirer.balance, ACQUIRER.3 + 100_000 + 100);
 

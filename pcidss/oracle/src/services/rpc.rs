@@ -66,7 +66,7 @@ impl OracleApiImpl {
 	async fn register_on_chain(&self, iso_msg: IsoMsg) {
 		let response_code =
 			iso_msg.bmp_child_value(RESPONSE_CODE_FIELD_NUMBER).unwrap_or("12".to_string());
-		if response_code == "00".to_string() {
+		if response_code == *"00" {
 			if let Ok(t) = iso_msg.get_field_value(&"message_type".to_string()) {
 				let msg_type = t.as_str().try_into().unwrap_or(MTI::AuthorizationRequest);
 				if msg_type == MTI::NetworkManagementResponse {
@@ -104,7 +104,7 @@ impl OracleApiServer for OracleApiImpl {
 		match self.processor.process(&mut iso_msg).await {
 			Ok((raw_iso_msg, iso_msg)) => {
 				log::info!("Processed ISO8583 message: {:?}", raw_iso_msg);
-				Self::register_on_chain(&self, iso_msg).await;
+				Self::register_on_chain(self, iso_msg).await;
 				Ok(raw_iso_msg)
 			},
 			Err(err) => {
@@ -176,15 +176,15 @@ impl OracleApiServer for OracleApiImpl {
 		// to include the brackets and quotes in the message
 		let message = {
 			let mut message = Vec::new();
-			message.push('[' as u8);
+			message.push(b'[');
 			for account_id in &account_ids {
-				message.push('"' as u8);
+				message.push(b'"');
 				message.extend_from_slice(account_id.as_bytes());
-				message.push('"' as u8);
-				message.push(',' as u8);
+				message.push(b'"');
+				message.push(b',');
 			}
 			message.pop();
-			message.push(']' as u8);
+			message.push(b']');
 			message
 		};
 
