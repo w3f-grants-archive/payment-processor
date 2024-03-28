@@ -35,9 +35,14 @@ impl TransactionTrait for PgTransaction {
 		Ok(None)
 	}
 
-	async fn find_by_bank_account_id(&self, source: &Uuid) -> Result<Vec<Transaction>, DomainError> {
+	async fn find_by_bank_account_id(
+		&self,
+		source: &Uuid,
+	) -> Result<Vec<Transaction>, DomainError> {
 		let client = self.pool.get().await?;
-		let stmt = client.prepare("SELECT * FROM bank_transaction WHERE source = $1 OR recipient = $1").await?;
+		let stmt = client
+			.prepare("SELECT * FROM bank_transaction WHERE source = $1 OR recipient = $1")
+			.await?;
 
 		let result = client.query(&stmt, &[&source]).await?;
 

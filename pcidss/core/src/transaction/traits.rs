@@ -14,7 +14,8 @@ pub trait TransactionTrait: Send + Sync {
 	async fn find_by_id(&self, id: &Uuid) -> Result<Option<Transaction>, DomainError>;
 
 	/// Find by beneficiary.
-	async fn find_by_bank_account_id(&self, source: &Uuid) -> Result<Vec<Transaction>, DomainError>;
+	async fn find_by_bank_account_id(&self, source: &Uuid)
+		-> Result<Vec<Transaction>, DomainError>;
 
 	/// Find a transaction by hash.
 	async fn find_by_hash(&self, hash: &str) -> Result<Option<Transaction>, DomainError>;
