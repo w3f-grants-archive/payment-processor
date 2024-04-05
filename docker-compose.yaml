@@ -19,7 +19,7 @@ services:
       timeout: 5s
       retries: 5
   substrate_node:
-    image: kingleard/iso8583-chain:stable
+    image: kingleard/iso8583-chain:latest
     ports:
       - 9944:9944
     command:
