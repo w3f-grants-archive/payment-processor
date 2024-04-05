@@ -19,7 +19,7 @@ services:
       timeout: 5s
       retries: 5
   substrate_node:
-    image: iso8583-chain
+    image: iso8583-chain:latest
     platform: linux/x86_64
     ports:
       - 9944:9944
